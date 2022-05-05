@@ -26,7 +26,7 @@ class QNetwork(nn.Module):
         #self.net.classifier[-1]=nn.Linear(4096, output_size)
 
         self.net = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=5, stride=2),
+            nn.Conv2d(4, 64, kernel_size=5, stride=2),
             nn.BatchNorm2d(64),
             nn.SiLU(),
             nn.MaxPool2d(2),
