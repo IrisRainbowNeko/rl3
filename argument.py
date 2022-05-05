@@ -12,7 +12,7 @@ def dqn_arguments(parser):
 
     parser.add_argument("--seed", default=11037, type=int)
     parser.add_argument("--hidden_size", default=512, type=int)
-    parser.add_argument("--buffer_size", default=int(1e4), type=int)
+    parser.add_argument("--buffer_size", default=int(5e4), type=int)
     parser.add_argument("--mem_step", default=int(6e3), type=int)
     parser.add_argument("--lr", default=0.0025, type=float)
     parser.add_argument("--batch_size", default=1024, type=int)

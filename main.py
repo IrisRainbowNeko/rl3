@@ -5,6 +5,7 @@ from wrappers import make_env, ProcessFrame84
 import gym
 from argument import dqn_arguments, pg_arguments
 import torch
+import cv2
 
 def parse():
     parser = argparse.ArgumentParser(description="SYSU_RL_HW2")
@@ -40,7 +41,7 @@ def run(args):
 
 def test(args):
     env_name = args.env_name
-    env = gym.make(env_name)
+    env = make_env(env_name)
     state=env.reset()
 
     print(env.action_space.n)
@@ -55,7 +56,7 @@ def test(args):
 
     from matplotlib import pyplot as plt
     plt.figure()
-    for i in range(4):
+    for i in range(3):
         plt.subplot(2,2,1+i)
         plt.imshow(state[i, :,:])
     plt.show()

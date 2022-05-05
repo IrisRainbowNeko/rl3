@@ -4,7 +4,7 @@ import copy
 import numpy as np
 import torch
 from pathlib import Path
-#from tensorboardX import SummaryWriter
+from tensorboardX import SummaryWriter
 from torch import nn, optim
 from agent_dir.agent import Agent
 from copy import deepcopy
@@ -116,6 +116,7 @@ class AgentDQN(Agent):
         self.optimizer = torch.optim.Adam(self.Qnet.parameters(), lr=args.lr)
 
         self.args=args
+        self.writer = SummaryWriter("log")
 
     
     def init_game_setting(self):
@@ -181,10 +182,12 @@ class AgentDQN(Agent):
                     loss = self.train_step(*trans)
 
                     if step%self.args.snap==0:
+                        self.writer.add_scalar("loss", loss, global_step=step)
                         logger.info(f'[{episode}/{n_ep}] <{step}> loss:{loss}')
                 step += 1
 
                 if done:# or step>self.args.n_frames:
+                    self.writer.add_scalar("ep_r", ep_r, global_step=episode)
                     logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r}, len_mem:{len(self.mem)}')
                     break
 
@@ -210,3 +213,4 @@ class AgentDQN(Agent):
         Implement the interaction between agent and environment here
         """
         self.train()
+        self.writer.close()
