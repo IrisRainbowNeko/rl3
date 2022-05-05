@@ -92,7 +92,7 @@ class AgentDQN(Agent):
             not_done = ~done
             y[not_done] = reward[not_done] + self.args.gamma*self.Qnet_T(next_state[not_done, ...]).max(dim=-1)[0]
 
-        pred = self.Qnet(state).gather(1, action)
+        pred = self.Qnet(state).gather(1, action).view(-1)
 
         loss = self.criterion(pred, y)
         self.optimizer.zero_grad()
