@@ -17,16 +17,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class QNetwork(nn.Module):
     def __init__(self, output_size):
         super(QNetwork, self).__init__()
-        #self.net = resnet.resnet18(pretrained=True)
-        #self.net.conv1 = nn.Conv2d(4, self.net.conv1.out_channels, kernel_size=7, stride=2, padding=3, bias=False)
-        #self.net.fc = nn.Linear(self.net.fc.in_features, output_size)
+        self.net = resnet.resnet18(pretrained=True)
+        self.net.conv1 = nn.Conv2d(4, self.net.conv1.out_channels, kernel_size=7, stride=2, padding=3, bias=False)
+        self.net.fc = nn.Linear(self.net.fc.in_features, output_size)
 
         #self.net = alexnet(pretrained=True)
         #self.net.features[0]=nn.Conv2d(4, 64, kernel_size=11, stride=4, padding=2)
         #self.net.classifier[-1]=nn.Linear(4096, output_size)
 
-        self.net = nn.Sequential(
-            nn.Conv2d(4, 32, kernel_size=5, stride=2),
+        '''self.net = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=5, stride=2),
             nn.BatchNorm2d(32),
             nn.SiLU(),
             nn.MaxPool2d(2),
@@ -47,7 +47,7 @@ class QNetwork(nn.Module):
             nn.Linear(4*4*128, 512),
             nn.SiLU(),
             nn.Linear(512, output_size)
-        )
+        )'''
 
     def forward(self, inputs):
         return self.net(inputs)
@@ -104,8 +104,8 @@ class AgentDQN(Agent):
 
         self.n_act = env.action_space.n
 
-        #self.Qnet = QNetwork(self.n_act).to(device)
-        self.Qnet = QNetworkCart(4, self.n_act).to(device)
+        self.Qnet = QNetwork(self.n_act).to(device)
+        #self.Qnet = QNetworkCart(4, self.n_act).to(device)
         self.Qnet_T = deepcopy(self.Qnet).to(device)
         for m in self.Qnet_T.parameters():
             m.requires_grad=False
@@ -161,7 +161,7 @@ class AgentDQN(Agent):
             state = torch.tensor(state, device=device)
 
             while True:
-                self.env.render()
+                #self.env.render()
 
                 if len(self.mem) >= self.args.mem_step:
                     action = self.make_action(state.unsqueeze(0).float(), self.args.test).detach().cpu()

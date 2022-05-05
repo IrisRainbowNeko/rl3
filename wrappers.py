@@ -116,18 +116,20 @@ class ClipCenter(gym.ObservationWrapper):
         self.center = [slice(None), slice(34,194)]
 
     def observation(self, obs):
-        return torch.tensor(np.array(obs)[self.center[1], self.center[0], :].astype(np.float32) / 255.0).permute(2,0,1)
+        cimg = np.array(obs)[self.center[1], self.center[0], :]
+        cimg = cv2.resize(cimg, (84, 84), interpolation=cv2.INTER_AREA)
+        return torch.tensor(cimg.astype(np.float32) / 255.0).permute(2,0,1)
 
-'''def make_env(env_name):
+def make_env(env_name):
     env = gym.make(env_name)
     env = MaxAndSkipEnv(env)
     env = FireResetEnv(env)
     env = ProcessFrame84(env)
     env = ImageToPyTorch(env)
     env = BufferWrapper(env, 4)
-    return ScaledFloatFrame(env)'''
+    return ScaledFloatFrame(env)
 
-def make_env(env_name):
+'''def make_env(env_name):
     env = gym.make(env_name)
     env = ClipCenter(env)
-    return env
+    return env'''
