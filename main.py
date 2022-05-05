@@ -1,8 +1,8 @@
 import argparse
-from wrappers import make_env
+from wrappers import make_env, ProcessFrame84
 import gym
 from argument import dqn_arguments, pg_arguments
-
+import torch
 
 def parse():
     parser = argparse.ArgumentParser(description="SYSU_RL_HW2")
@@ -35,12 +35,26 @@ def run(args):
 
 def test(args):
     env_name = args.env_name
-    env = gym.make(env_name)
+    env = make_env(env_name)
     state=env.reset()
 
     print(env.action_space.n)
     print(state.shape)
     #print(env.observation_space)
+
+    state = env.step(1)[0]
+    for i in range(60):
+        state = env.step(2)[0]
+
+    #state=torch.tensor(state).permute(2,0,1)
+
+    from matplotlib import pyplot as plt
+    plt.figure()
+    for i in range(4):
+        plt.subplot(2,2,1+i)
+        plt.imshow(state[i, :,:])
+    plt.show()
+
 
 if __name__ == '__main__':
     args = parse()
