@@ -52,6 +52,22 @@ class QNetwork(nn.Module):
     def forward(self, inputs):
         return self.net(inputs)
 
+class QNetworkCart(nn.Module):
+    def __init__(self, input_size, output_size):
+        super(QNetworkCart, self).__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(input_size, 512),
+            nn.SiLU(),
+
+            nn.Linear(512, 512),
+            nn.SiLU(),
+
+            nn.Linear(512, output_size)
+        )
+
+    def forward(self, inputs):
+        return self.net(inputs)
 
 class ReplayBuffer:
     def __init__(self, buffer_size):
@@ -62,7 +78,7 @@ class ReplayBuffer:
         return len(self.buffer)
 
     def proc(self, state, action, reward, next_state, done):
-        return state, action, reward, next_state, done
+        return state.float(), action, reward, next_state.float(), done
 
     def push(self, *transition):
         if len(self.buffer)>=self.buffer_size:
@@ -88,7 +104,8 @@ class AgentDQN(Agent):
 
         self.n_act = env.action_space.n
 
-        self.Qnet = QNetwork(self.n_act).to(device)
+        #self.Qnet = QNetwork(self.n_act).to(device)
+        self.Qnet = QNetworkCart(4, self.n_act).to(device)
         self.Qnet_T = deepcopy(self.Qnet).to(device)
         for m in self.Qnet_T.parameters():
             m.requires_grad=False
@@ -134,11 +151,10 @@ class AgentDQN(Agent):
         Implement your training algorithm here
         """
         n_ep=10000
+        step = 0
 
         for episode in range(n_ep):
-
             ep_r = 0
-            step = 0
 
             state = self.env.reset()
             state = torch.tensor(state, device=device)
@@ -147,11 +163,11 @@ class AgentDQN(Agent):
                 self.env.render()
 
                 if len(self.mem) >= self.args.mem_step:
-                    action = self.make_action(state.unsqueeze(0), self.args.test).detach().cpu()
+                    action = self.make_action(state.unsqueeze(0).float(), self.args.test).detach().cpu()
                 else:
                     action = torch.randint(0, self.n_act, (1,))
 
-                next_state, reward, done, info = self.env.step(action)
+                next_state, reward, done, info = self.env.step(action.item())
 
                 ep_r += reward
 
@@ -166,13 +182,16 @@ class AgentDQN(Agent):
 
                     if step%self.args.snap==0:
                         logger.info(f'[{episode}/{n_ep}] <{step}> loss:{loss}')
+                step += 1
 
-                if done or step>self.args.n_frames:
+                if done:# or step>self.args.n_frames:
                     logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r}, len_mem:{len(self.mem)}')
                     break
 
-                step+=1
                 state = torch.tensor(next_state, device=device)
+
+            if (episode + 1) % self.args.snap_save == 0:
+                torch.save(self.Qnet.state_dict(), os.path.join(self.args.save_dir, self.args.name, f'net_{episode + 1}.pth'))
 
     @torch.no_grad()
     def make_action(self, observation, test=True):
