@@ -128,7 +128,10 @@ class AgentDQN(Agent):
                         self.Qnet_T.load_state_dict(self.Qnet.state_dict())
 
                     trans = self.mem.sample(self.args.batch_size)
-                    self.train_step(*trans)
+                    loss = self.train_step(*trans)
+
+                    if step%self.args.snap==0:
+                        logger.info(f'[{episode}/{n_ep}] <{step}> loss:{loss}')
 
                 if done or step>self.args.n_frames:
                     logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r}, len_mem:{len(self.mem)}')
