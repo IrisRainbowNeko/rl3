@@ -23,7 +23,7 @@ def dqn_arguments(parser):
     parser.add_argument("--use_cuda", default=True, type=bool)
     parser.add_argument("--n_frames", default=int(400000), type=int)
     parser.add_argument("--learning_freq", default=1, type=int)
-    parser.add_argument("--target_update_freq", default=4000, type=int)
+    parser.add_argument("--target_update_freq", default=10000, type=int)
 
     return parser
 
