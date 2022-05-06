@@ -189,13 +189,13 @@ class AgentDQN(Agent):
                     loss_sum += loss
                     if step%self.args.snap==0:
                         self.writer.add_scalar("loss", loss, global_step=step)
-                        logger.info(f'[{episode}/{n_ep}] <{step}> loss:{loss_sum/self.args.snap}')
+                        logger.info(f'[{episode}/{n_ep}] <{step}> loss:{loss_sum/self.args.snap}, eps:{self.eps}')
                         loss_sum = 0
                 step += 1
 
                 if done:# or step>self.args.n_frames:
                     self.writer.add_scalar("ep_r", ep_r, global_step=episode)
-                    logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r}, len_mem:{len(self.mem)}')
+                    logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r}, len_mem:{len(self.mem)}, eps:{self.eps}')
                     break
 
                 state = torch.tensor(next_state, device=device)
