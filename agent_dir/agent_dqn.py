@@ -152,6 +152,7 @@ class AgentDQN(Agent):
         """
         n_ep=10000
         step = 0
+        loss_sum = 0
 
         for episode in range(n_ep):
             ep_r = 0
@@ -180,9 +181,11 @@ class AgentDQN(Agent):
                     trans = self.mem.sample(self.args.batch_size)
                     loss = self.train_step(*trans)
 
+                    loss_sum += loss
                     if step%self.args.snap==0:
                         self.writer.add_scalar("loss", loss, global_step=step)
-                        logger.info(f'[{episode}/{n_ep}] <{step}> loss:{loss}')
+                        logger.info(f'[{episode}/{n_ep}] <{step}> loss:{loss_sum/self.args.snap}')
+                        loss_sum = 0
                 step += 1
 
                 if done:# or step>self.args.n_frames:
