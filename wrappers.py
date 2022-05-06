@@ -120,6 +120,24 @@ class ClipCenter(gym.ObservationWrapper):
         cimg = cv2.resize(cimg, (84, 84), interpolation=cv2.INTER_AREA)
         return torch.tensor(cimg.astype(np.float32) / 255.0).permute(2,0,1)
 
+class PoleCopy(gym.ObservationWrapper):
+    def __init__(self, env, size=5):
+        super(PoleCopy, self).__init__(env)
+        self.buffer=[]
+        self.size=size
+
+    def reset(self, **kwargs):
+        self.buffer.clear()
+        return super().reset(**kwargs)
+
+    def observation(self, obs):
+        cimg = np.array(obs)[self.center[1], self.center[0], :]
+        cimg = cv2.resize(cimg, (84, 84), interpolation=cv2.INTER_AREA)
+        self.buffer.append(torch.tensor(cimg.astype(np.float32) / 255.0).permute(2,0,1))
+        if len(self.buffer)>self.size:
+            self.buffer.pop(0)
+        return torch.cat(self.buffer, dim=0)
+
 def make_env(env_name):
     env = gym.make(env_name)
     env = MaxAndSkipEnv(env)
@@ -129,7 +147,7 @@ def make_env(env_name):
     env = BufferWrapper(env, 4)
     return ScaledFloatFrame(env)
 
-'''def make_env(env_name):
+def make_env_pole(env_name):
     env = gym.make(env_name)
-    env = ClipCenter(env)
-    return env'''
+    env = PoleCopy(env)
+    return env

@@ -17,15 +17,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class QNetwork(nn.Module):
     def __init__(self, output_size):
         super(QNetwork, self).__init__()
-        #self.net = resnet.resnet18(pretrained=True)
-        #self.net.conv1 = nn.Conv2d(4, self.net.conv1.out_channels, kernel_size=7, stride=2, padding=3, bias=False)
-        #self.net.fc = nn.Linear(self.net.fc.in_features, output_size)
+        self.net = resnet.resnet18(pretrained=True)
+        self.net.conv1 = nn.Conv2d(4, self.net.conv1.out_channels, kernel_size=7, stride=2, padding=3, bias=False)
+        self.net.fc = nn.Linear(self.net.fc.in_features, output_size)
 
         #self.net = alexnet(pretrained=True)
         #self.net.features[0]=nn.Conv2d(4, 64, kernel_size=11, stride=4, padding=2)
         #self.net.classifier[-1]=nn.Linear(4096, output_size)
 
-        self.net = nn.Sequential(
+        '''self.net = nn.Sequential(
             nn.Conv2d(4, 64, kernel_size=5, stride=2),
             nn.BatchNorm2d(64),
             nn.SiLU(),
@@ -47,7 +47,7 @@ class QNetwork(nn.Module):
             nn.Linear(4*4*256, 512),
             nn.SiLU(),
             nn.Linear(512, output_size)
-        )
+        )'''
 
     def forward(self, inputs):
         return self.net(inputs)
@@ -136,7 +136,7 @@ class AgentDQN(Agent):
 
         with torch.no_grad():
             not_done = ~done
-            y[not_done] = reward[not_done] + self.args.gamma*self.Qnet_T(next_state[not_done, ...]).max(dim=-1)[0]
+            y[not_done] += self.args.gamma*self.Qnet_T(next_state[not_done, ...]).max(dim=-1)[0]
 
         pred = self.Qnet(state).gather(1, action).view(-1)
 
