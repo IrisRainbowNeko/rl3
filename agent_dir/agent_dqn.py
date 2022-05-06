@@ -25,7 +25,7 @@ class QNetwork(nn.Module):
         #self.net.features[0]=nn.Conv2d(4, 64, kernel_size=11, stride=4, padding=2)
         #self.net.classifier[-1]=nn.Linear(4096, output_size)
 
-        '''self.net = nn.Sequential(
+        self.net = nn.Sequential(
             nn.Conv2d(4, 32, kernel_size=7, stride=2),
             nn.BatchNorm2d(32),
             nn.SiLU(),
@@ -46,7 +46,7 @@ class QNetwork(nn.Module):
             nn.Linear(7*7*64, 2048),
             nn.SiLU(),
             nn.Linear(2048, output_size)
-        )'''
+        )
 
     def forward(self, inputs):
         return self.net(inputs)
@@ -110,6 +110,7 @@ class AgentDQN(Agent):
             m.requires_grad=False
 
         self.mem = ReplayBuffer(args.buffer_size)
+        self.eps = args.eps
 
         self.criterion = nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.Qnet.parameters(), lr=args.lr)
@@ -179,6 +180,9 @@ class AgentDQN(Agent):
                     if (step + 1) % self.args.target_update_freq == 0:
                         self.Qnet_T.load_state_dict(self.Qnet.state_dict())
 
+                    if (step + 1) in self.args.eps_decay:
+                        self.eps = 1-(1-self.eps)*self.args.eps_decay_rate
+
                     trans = self.mem.sample(self.args.batch_size)
                     loss = self.train_step(*trans)
 
@@ -209,7 +213,7 @@ class AgentDQN(Agent):
         if test:
             return self.Qnet(observation).max(dim=-1)[1]
         else:
-            return self.Qnet(observation).max(dim=-1)[1] if random.random()<self.args.eps else torch.randint(0,self.n_act,(1,))
+            return self.Qnet(observation).max(dim=-1)[1] if random.random()<self.eps else torch.randint(0,self.n_act,(1,))
 
     def run(self):
         """

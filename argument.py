@@ -1,3 +1,6 @@
+def str2list(v):
+    return [float(x) for x in v.split(',')]
+
 def dqn_arguments(parser):
     """
     Add your arguments here if needed. The TAs will run test.py to load
@@ -11,13 +14,14 @@ def dqn_arguments(parser):
     #parser.add_argument('--env_name', default="CartPole-v0", help='environment name')
 
     parser.add_argument("--seed", default=11037, type=int)
-    parser.add_argument("--hidden_size", default=512, type=int)
     parser.add_argument("--buffer_size", default=int(3e4), type=int)
     parser.add_argument("--mem_step", default=int(5e3), type=int)
     parser.add_argument("--lr", default=0.0002, type=float)
     parser.add_argument("--batch_size", default=1024, type=int)
     parser.add_argument("--gamma", default=0.99, type=float)
     parser.add_argument("--eps", default=0.9, type=float)
+    parser.add_argument("--eps_decay", default=[87000, 93000, 96000, 98000, 99000, 100000, 110000], type=str2list)
+    parser.add_argument("--eps_decay_rate", default=0.8, type=str2list)
     parser.add_argument("--grad_norm_clip", default=10, type=float)
 
     parser.add_argument("--test", default=False, type=bool)
@@ -27,7 +31,6 @@ def dqn_arguments(parser):
     parser.add_argument("--target_update_freq", default=5000, type=int)
 
     return parser
-
 
 def pg_arguments(parser):
     """
