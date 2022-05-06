@@ -43,9 +43,9 @@ class QNetwork(nn.Module):
             nn.AdaptiveAvgPool2d((7,7)),
             nn.Flatten(),
 
-            nn.Linear(7*7*256, 4096),
+            nn.Linear(7*7*64, 2048),
             nn.SiLU(),
-            nn.Linear(4096, output_size)
+            nn.Linear(2048, output_size)
         )
 
     def forward(self, inputs):
