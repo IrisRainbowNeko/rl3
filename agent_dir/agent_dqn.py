@@ -161,7 +161,8 @@ class AgentDQN(Agent):
             state = torch.tensor(state, device=device)
 
             while True:
-                #self.env.render()
+                if self.args.render:
+                    self.env.render()
 
                 if len(self.mem) >= self.args.mem_step:
                     action = self.make_action(state.unsqueeze(0).float(), self.args.test).detach().cpu()
