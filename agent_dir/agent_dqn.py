@@ -17,9 +17,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class QNetwork(nn.Module):
     def __init__(self, output_size):
         super(QNetwork, self).__init__()
-        self.net = resnet.resnet18(pretrained=True)
-        self.net.conv1 = nn.Conv2d(4, self.net.conv1.out_channels, kernel_size=7, stride=2, padding=3, bias=False)
-        self.net.fc = nn.Linear(self.net.fc.in_features, output_size)
+        #self.net = resnet.resnet18(pretrained=True)
+        #self.net.conv1 = nn.Conv2d(4, self.net.conv1.out_channels, kernel_size=7, stride=2, padding=3, bias=False)
+        #self.net.fc = nn.Linear(self.net.fc.in_features, output_size)
 
         #self.net = alexnet(pretrained=True)
         #self.net.features[0]=nn.Conv2d(4, 64, kernel_size=11, stride=4, padding=2)
