@@ -33,8 +33,6 @@ def run(args):
         agent.run()
 
     if args.train_dqn:
-        args.save_dir=f'{args.save_dir}_{args.agent}'
-
         env_name = args.env_name
         env = make_env(env_name)
         #env = gym.make(env_name)
@@ -68,5 +66,6 @@ def test(args):
 
 if __name__ == '__main__':
     args = parse()
+    args.save_dir = f'{args.save_dir}_{args.agent}'
     os.makedirs(os.path.join(args.save_dir, args.name), exist_ok=True)
     run(args)
