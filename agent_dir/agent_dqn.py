@@ -241,7 +241,7 @@ class AgentDDQN(AgentDQN):
 
         with torch.no_grad():
             not_done = ~done
-            Q_max_a = self.Qnet(next_state[not_done, ...]).max(dim=-1)[0].long().unsqueeze(-1)
+            Q_max_a = self.Qnet(next_state[not_done, ...]).max(dim=-1)[1].long().unsqueeze(-1)
             y[not_done] += self.args.gamma*self.Qnet_T(next_state[not_done, ...]).gather(1, Q_max_a).view(-1)
 
         pred = self.Qnet(state).gather(1, action).view(-1)
