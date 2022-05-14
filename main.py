@@ -33,6 +33,8 @@ def run(args):
         agent.run()
 
     if args.train_dqn:
+        args.save_dir=f'{args.save_dir}_{args.agent}'
+
         env_name = args.env_name
         env = make_env(env_name)
         #env = gym.make(env_name)
