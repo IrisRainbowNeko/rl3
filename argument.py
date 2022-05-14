@@ -14,13 +14,14 @@ def dqn_arguments(parser):
     #parser.add_argument('--env_name', default="CartPole-v0", help='environment name')
 
     parser.add_argument("--seed", default=11037, type=int)
-    parser.add_argument("--buffer_size", default=int(5e4), type=int)
-    parser.add_argument("--mem_step", default=int(5e3), type=int)
+    parser.add_argument("--buffer_size", default=int(6e4), type=int)
+    parser.add_argument("--mem_step", default=int(2e4), type=int)
     parser.add_argument("--lr", default=1e-4, type=float)
     parser.add_argument("--batch_size", default=1024, type=int)
     parser.add_argument("--gamma", default=0.95, type=float)
     parser.add_argument("--eps", default=0.5, type=float)
-    parser.add_argument("--eps_decay", default=[87000, 93000, 96000, 98000, 99000, 100000, 110000], type=str2list)
+    #parser.add_argument("--eps_decay", default=[87000, 93000, 96000, 98000, 99000, 100000, 110000], type=str2list)
+    parser.add_argument("--eps_decay", default=[25000, 30000, 35000, 40000, 45000, 60000, 80000], type=str2list)
     parser.add_argument("--eps_decay_rate", default=0.8, type=str2list)
     parser.add_argument("--grad_norm_clip", default=10, type=float)
 

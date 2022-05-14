@@ -221,3 +221,22 @@ class AgentDQN(Agent):
         """
         self.train()
         self.writer.close()
+
+class AgentDDQN(AgentDQN):
+    def train_step(self, state, action, reward, next_state, done):
+        y = deepcopy(reward)
+
+        with torch.no_grad():
+            not_done = ~done
+            Q_max_a = self.Qnet(next_state[not_done, ...]).max(dim=-1)[0]
+
+            y[not_done] += self.args.gamma*self.Qnet_T(next_state[not_done, ...]).gather(1, Q_max_a).view(-1)
+
+        pred = self.Qnet(state).gather(1, action).view(-1)
+
+        loss = self.criterion(pred, y)
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        return loss.item()
