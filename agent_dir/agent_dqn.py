@@ -17,6 +17,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class QNetwork(nn.Module):
     def __init__(self, output_size):
         super(QNetwork, self).__init__()
+        self.output_size=output_size
         #self.net = resnet.resnet18(pretrained=True)
         #self.net.conv1 = nn.Conv2d(4, self.net.conv1.out_channels, kernel_size=7, stride=2, padding=3, bias=False)
         #self.net.fc = nn.Linear(self.net.fc.in_features, output_size)
@@ -50,6 +51,16 @@ class QNetwork(nn.Module):
 
     def forward(self, inputs):
         return self.net(inputs)
+
+class DuelingQNetwork(QNetwork):
+    def __init__(self, output_size):
+        super().__init__(output_size+1)
+
+    def forward(self, inputs):
+        out = self.net(inputs)
+        advantage=out[:,:self.output_size-1]
+        value=out[:,self.output_size-1].unsqueeze(-1)
+        return value + advantage - advantage.mean()
 
 class QNetworkCart(nn.Module):
     def __init__(self, input_size, output_size):
@@ -94,7 +105,7 @@ class ReplayBuffer:
 
 
 class AgentDQN(Agent):
-    def __init__(self, env, args):
+    def __init__(self, env, args, network=QNetwork):
         """
         Initialize every things you need here.
         For example: building your model
@@ -103,7 +114,7 @@ class AgentDQN(Agent):
 
         self.n_act = env.action_space.n
 
-        self.Qnet = QNetwork(self.n_act).to(device)
+        self.Qnet = network(self.n_act).to(device)
         #self.Qnet = QNetworkCart(4, self.n_act).to(device)
         self.Qnet_T = deepcopy(self.Qnet).to(device)
         for m in self.Qnet_T.parameters():
@@ -229,7 +240,6 @@ class AgentDDQN(AgentDQN):
         with torch.no_grad():
             not_done = ~done
             Q_max_a = self.Qnet(next_state[not_done, ...]).max(dim=-1)[0]
-
             y[not_done] += self.args.gamma*self.Qnet_T(next_state[not_done, ...]).gather(1, Q_max_a).view(-1)
 
         pred = self.Qnet(state).gather(1, action).view(-1)
@@ -240,3 +250,7 @@ class AgentDDQN(AgentDQN):
         self.optimizer.step()
 
         return loss.item()
+
+class AgentDuelingDQN(AgentDQN):
+    def __init__(self, env, args):
+        super().__init__(env, args, network=DuelingQNetwork)

@@ -36,8 +36,9 @@ def run(args):
         env_name = args.env_name
         env = make_env(env_name)
         #env = gym.make(env_name)
-        from agent_dir.agent_dqn import AgentDQN
-        agent = AgentDQN(env, args)
+        from agent_dir.agent_dqn import AgentDQN, AgentDDQN, AgentDuelingDQN
+
+        agent = eval(args.agent)(env, args)
         agent.run()
 
 def test(args):

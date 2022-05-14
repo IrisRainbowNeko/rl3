@@ -13,6 +13,8 @@ def dqn_arguments(parser):
     parser.add_argument('--env_name', default="PongNoFrameskip-v4", help='environment name')
     #parser.add_argument('--env_name', default="CartPole-v0", help='environment name')
 
+    parser.add_argument('--agent', default="AgentDQN", help='agent name')
+
     parser.add_argument("--seed", default=11037, type=int)
     parser.add_argument("--buffer_size", default=int(6e4), type=int)
     parser.add_argument("--mem_step", default=int(2e4), type=int)
