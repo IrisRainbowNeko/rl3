@@ -8,6 +8,7 @@ from tensorboardX import SummaryWriter
 from torch import nn, optim
 from agent_dir.agent import Agent
 from copy import deepcopy
+from .utils import *
 
 from torchvision.models import resnet, alexnet, vgg
 from loguru import logger
@@ -27,26 +28,26 @@ class QNetwork(nn.Module):
         #self.net.classifier[-1]=nn.Linear(4096, output_size)
 
         self.net = nn.Sequential(
-            nn.Conv2d(4, 32, kernel_size=7, stride=2),
+            nn.Conv2d(4, 32, kernel_size=7, stride=4),
             nn.BatchNorm2d(32),
-            nn.SiLU(),
-            nn.MaxPool2d(2),
+            nn.LeakyReLU(),
+            #nn.MaxPool2d(2),
 
-            nn.Conv2d(32, 64, kernel_size=5),
+            nn.Conv2d(32, 64, kernel_size=5, stride=2),
             nn.BatchNorm2d(64),
-            nn.SiLU(),
-            nn.MaxPool2d(2),
+            nn.LeakyReLU(),
+            #nn.MaxPool2d(2),
 
             nn.Conv2d(64, 64, kernel_size=3),
             nn.BatchNorm2d(64),
-            nn.SiLU(),
+            nn.LeakyReLU(),
 
-            nn.AdaptiveAvgPool2d((7,7)),
+            nn.AdaptiveAvgPool2d((5,5)),
             nn.Flatten(),
 
-            nn.Linear(7*7*64, 2048),
-            nn.SiLU(),
-            nn.Linear(2048, output_size)
+            nn.Linear(5*5*64, 512),
+            nn.LeakyReLU(),
+            nn.Linear(512, output_size)
         )
 
     def forward(self, inputs):
@@ -121,13 +122,15 @@ class AgentDQN(Agent):
             m.requires_grad=False
 
         self.mem = ReplayBuffer(args.buffer_size)
-        self.eps = args.eps
+        self.eps = args.eps_start
 
         self.criterion = nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.Qnet.parameters(), lr=args.lr)
 
         self.args=args
         self.writer = SummaryWriter("log")
+
+        self.eps_scd = EpsScheduler(args.eps_start, args.eps_end, args.eps_decay)
 
     
     def init_game_setting(self):
@@ -177,10 +180,8 @@ class AgentDQN(Agent):
                 if self.args.render:
                     self.env.render()
 
-                if len(self.mem) >= self.args.mem_step:
-                    action = self.make_action(state.unsqueeze(0).float(), self.args.test).detach().cpu()
-                else:
-                    action = torch.randint(0, self.n_act, (1,))
+                action = self.make_action(state.unsqueeze(0).float(), self.args.test).detach().cpu()
+                self.eps = self.eps_scd.step()
 
                 next_state, reward, done, info = self.env.step(action.item())
 
@@ -188,12 +189,9 @@ class AgentDQN(Agent):
 
                 self.mem.push(*[torch.tensor(x, device='cpu') for x in [state, action, reward, next_state, done]])
 
-                if len(self.mem) >= self.args.mem_step:
+                if len(self.mem) >= self.args.batch_size*5:
                     if (step + 1) % self.args.target_update_freq == 0:
                         self.Qnet_T.load_state_dict(self.Qnet.state_dict())
-
-                    if (step + 1) in self.args.eps_decay:
-                        self.eps = 1-(1-self.eps)*self.args.eps_decay_rate
 
                     trans = self.mem.sample(self.args.batch_size)
                     loss = self.train_step(*trans)
@@ -225,7 +223,7 @@ class AgentDQN(Agent):
         if test:
             return self.Qnet(observation).max(dim=-1)[1]
         else:
-            return self.Qnet(observation).max(dim=-1)[1] if random.random()<self.eps else torch.randint(0,self.n_act,(1,))
+            return self.Qnet(observation).max(dim=-1)[1] if random.random()>self.eps else torch.randint(0,self.n_act,(1,))
 
     def run(self):
         """

@@ -8,58 +8,49 @@ from tensorboardX import SummaryWriter
 from torch import nn, optim
 from agent_dir.agent import Agent
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class PGNetwork(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_size, output_size):
         super(PGNetwork, self).__init__()
-        ##################
-        # YOUR CODE HERE #
-        ##################
-        pass
+
+        self.net = nn.Sequential(
+            nn.Linear(input_size, 512),
+            nn.SiLU(),
+
+            nn.Linear(512, 512),
+            nn.SiLU(),
+
+            nn.Linear(512, output_size)
+        )
 
     def forward(self, inputs):
-        ##################
-        # YOUR CODE HERE #
-        ##################
-        pass
+        return self.net(inputs)
 
 
 class ReplayBuffer:
     def __init__(self, buffer_size):
-        """
-        Trajectory buffer. It will clear the buffer after updating.
-        """
-        ##################
-        # YOUR CODE HERE #
-        ##################
-        pass
+        self.buffer = []
+        self.buffer_size = buffer_size
 
     def __len__(self):
-        ##################
-        # YOUR CODE HERE #
-        ##################
-        pass
+        return len(self.buffer)
+
+    def proc(self, state, action, reward, next_state, done):
+        return state.float(), action, reward, next_state.float(), done
 
     def push(self, *transition):
-        ##################
-        # YOUR CODE HERE #
-        ##################
-        pass
+        if len(self.buffer) >= self.buffer_size:
+            self.buffer[random.randint(0, self.buffer_size - 1)] = self.proc(*transition)
+        else:
+            self.buffer.append(self.proc(*transition))
 
     def sample(self, batch_size):
-        """
-        Sample all the data stored in the buffer
-        """
-        ##################
-        # YOUR CODE HERE #
-        ##################
-        pass
+        batch = random.sample(self.buffer, batch_size)
+        return [torch.stack(x, dim=0).to(device) for x in list(zip(*batch))]
 
     def clean(self):
-        ##################
-        # YOUR CODE HERE #
-        ##################
-        pass
+        self.buffer.clear()
 
 
 class AgentPG(Agent):
