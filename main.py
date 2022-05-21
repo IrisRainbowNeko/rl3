@@ -15,7 +15,7 @@ def parse():
     parser.add_argument("--render", default=False, type=bool)
     parser.add_argument("--snap", default=100, type=float)
     parser.add_argument("--name", default='CartPole', type=str)
-    parser.add_argument("--snap_save", default=500, type=float)
+    parser.add_argument("--snap_save", default=10000, type=float)
     parser.add_argument("--save_dir", default='output', type=str)
 
     parser = dqn_arguments(parser)

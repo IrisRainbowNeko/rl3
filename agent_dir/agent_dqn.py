@@ -210,8 +210,8 @@ class AgentDQN(Agent):
 
                 state = torch.tensor(next_state, device=device)
 
-            if (episode + 1) % self.args.snap_save == 0:
-                torch.save(self.Qnet.state_dict(), os.path.join(self.args.save_dir, self.args.name, f'net_{episode + 1}.pth'))
+                if (step + 1) % self.args.snap_save == 0:
+                    torch.save(self.Qnet.state_dict(), os.path.join(self.args.save_dir, self.args.name, f'net_{step + 1}.pth'))
 
     @torch.no_grad()
     def make_action(self, observation, test=True):
