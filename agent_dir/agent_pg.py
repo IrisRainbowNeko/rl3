@@ -30,9 +30,8 @@ class PGNetwork(nn.Module):
 
 
 class ReplayBuffer:
-    def __init__(self, buffer_size):
+    def __init__(self):
         self.buffer = []
-        self.buffer_size = buffer_size
 
     def __len__(self):
         return len(self.buffer)
@@ -65,7 +64,7 @@ class AgentPG(Agent):
         for m in self.Qnet_T.parameters():
             m.requires_grad=False
 
-        self.mem = ReplayBuffer(args.buffer_size)
+        self.mem = ReplayBuffer()
         self.eps = args.eps_start
 
         self.criterion = nn.CrossEntropyLoss(reduction='none')
