@@ -155,7 +155,7 @@ class AgentPG(Agent):
         Input:observation
         Return: action
         """
-        act = torch.softmax(self.Qnet(observation), dim=0).cpu().view(-1).numpy()
+        act = torch.softmax(self.Qnet(observation).view(-1), dim=0).cpu().numpy()
         return np.random.choice(range(act.shape[0]), p=act)
 
     def run(self):
