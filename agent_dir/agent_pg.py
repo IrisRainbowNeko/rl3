@@ -65,7 +65,6 @@ class AgentPG(Agent):
             m.requires_grad=False
 
         self.mem = ReplayBuffer()
-        self.eps = args.eps_start
 
         self.criterion = nn.CrossEntropyLoss(reduction='none')
         self.optimizer = torch.optim.Adam(self.Qnet.parameters(), lr=args.lr)
@@ -138,8 +137,6 @@ class AgentPG(Agent):
 
                 if done:  # or step>self.args.n_frames:
                     self.writer.add_scalar("ep_r", ep_r, global_step=episode)
-                    logger.info(f'[{episode}/{n_ep}] <{step}> loss:{loss_sum / self.args.snap}, eps:{self.eps}')
-                    logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r}, len_mem:{len(self.mem)}, eps:{self.eps}')
 
                     trans = self.mem.sample()
                     loss = self.train_step(*trans)
