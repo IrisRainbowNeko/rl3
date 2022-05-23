@@ -61,7 +61,6 @@ class AgentPG(Agent):
         self.n_act = env.action_space.n
 
         self.Qnet = network(4, self.n_act).to(device)
-        #self.Qnet = QNetworkCart(4, self.n_act).to(device)
         self.Qnet_T = deepcopy(self.Qnet).to(device)
         for m in self.Qnet_T.parameters():
             m.requires_grad=False

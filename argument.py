@@ -46,6 +46,8 @@ def pg_arguments(parser):
     """
     parser.add_argument('--env_name', default="CartPole-v0", help='environment name')
 
+    parser.add_argument('--agent', default="AgentPG", help='agent name')
+
     parser.add_argument("--seed", default=11037, type=int)
     parser.add_argument("--hidden_size", default=16, type=int)
     parser.add_argument("--lr", default=0.02, type=float)
