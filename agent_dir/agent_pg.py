@@ -130,7 +130,7 @@ class AgentPG(Agent):
 
                 ep_r += reward
 
-                self.mem.push(*[torch.tensor(x, device='cpu') for x in [state, action, reward, next_state, done]])
+                self.mem.push(*[torch.tensor(x, device='cpu') for x in [state, action, reward]])
 
                 state = torch.tensor(next_state, device=device)
                 step += 1
