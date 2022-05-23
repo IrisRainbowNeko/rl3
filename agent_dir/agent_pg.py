@@ -162,4 +162,5 @@ class AgentPG(Agent):
         """
         Implement the interaction between agent and environment here
         """
-        pass
+        self.train()
+        self.writer.close()
