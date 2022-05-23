@@ -29,24 +29,24 @@ class QNetwork(nn.Module):
 
         self.net = nn.Sequential(
             nn.Conv2d(4, 32, kernel_size=7, stride=4),
-            nn.BatchNorm2d(32),
-            nn.LeakyReLU(),
+            #nn.BatchNorm2d(32),
+            nn.SiLU(),
             #nn.MaxPool2d(2),
 
             nn.Conv2d(32, 64, kernel_size=5, stride=2),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(),
+            #nn.BatchNorm2d(64),
+            nn.SiLU(),
             #nn.MaxPool2d(2),
 
             nn.Conv2d(64, 64, kernel_size=3),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(),
+            #nn.BatchNorm2d(64),
+            nn.SiLU(),
 
             nn.AdaptiveAvgPool2d((5,5)),
             nn.Flatten(),
 
             nn.Linear(5*5*64, 512),
-            nn.LeakyReLU(),
+            nn.SiLU(),
             nn.Linear(512, output_size)
         )
 
