@@ -125,7 +125,7 @@ class AgentPG(Agent):
                 if self.args.render:
                     self.env.render()
 
-                action = self.make_action(state.unsqueeze(0).float(), self.args.test).detach().cpu()
+                action = self.make_action(state.unsqueeze(0).float(), self.args.test)
                 next_state, reward, done, info = self.env.step(action.item())
 
                 ep_r += reward
@@ -156,7 +156,7 @@ class AgentPG(Agent):
         Return: action
         """
         act = torch.softmax(self.Qnet(observation).view(-1), dim=0).cpu().numpy()
-        return np.random.choice(range(act.shape[0]), p=act)
+        return torch.tensor(np.random.choice(range(act.shape[0]), p=act))
 
     def run(self):
         """
