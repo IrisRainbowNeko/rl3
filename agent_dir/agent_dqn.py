@@ -93,7 +93,9 @@ class ReplayBuffer:
 
     def push(self, *transition):
         if len(self.buffer)>=self.buffer_size:
-            self.buffer[random.randint(0,self.buffer_size-1)]=self.proc(*transition)
+            #self.buffer[random.randint(0,self.buffer_size-1)]=self.proc(*transition)
+            self.buffer.pop(0)
+            self.buffer.append(self.proc(*transition))
         else:
             self.buffer.append(self.proc(*transition))
 
@@ -221,9 +223,9 @@ class AgentDQN(Agent):
         Return:action
         """
         if test:
-            return self.Qnet(observation).max(dim=-1)[1]
+            return self.Qnet(observation).argmax(dim=-1)
         else:
-            return self.Qnet(observation).max(dim=-1)[1] if random.random()>self.eps else torch.randint(0,self.n_act,(1,))
+            return self.Qnet(observation).argmax(dim=-1) if random.random()>self.eps else torch.randint(0,self.n_act,(1,))
 
     def run(self):
         """

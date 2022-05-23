@@ -17,9 +17,10 @@ def dqn_arguments(parser):
 
     parser.add_argument("--seed", default=11037, type=int)
     parser.add_argument("--buffer_size", default=int(1e5), type=int)
-    parser.add_argument("--lr", default=1e-4, type=float)
+    #parser.add_argument("--lr", default=1e-4, type=float)
+    parser.add_argument("--lr", default=0.0000625, type=float)
     parser.add_argument("--batch_size", default=32, type=int)
-    parser.add_argument("--gamma", default=0.95, type=float)
+    parser.add_argument("--gamma", default=0.99, type=float)
     parser.add_argument("--eps_start", default=1.0, type=float)
     parser.add_argument("--eps_end", default=0.01, type=float)
     #parser.add_argument("--eps_decay", default=[87000, 93000, 96000, 98000, 99000, 100000, 110000], type=str2list)
