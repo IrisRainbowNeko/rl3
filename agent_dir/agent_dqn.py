@@ -118,6 +118,7 @@ class AgentDQN(Agent):
         For example: building your model
         """
         super(AgentDQN, self).__init__(env)
+        logger.add(f'{args.agent}.log')
 
         self.n_act = env.action_space.n
 
