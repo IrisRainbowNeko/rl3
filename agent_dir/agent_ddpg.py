@@ -109,9 +109,10 @@ class AgentDDPG(Agent):
         super(AgentDDPG, self).__init__(env)
 
         self.n_act = env.action_space.shape[0]
+        self.n_state = env.observation_space.shape[0]
 
-        self.Anet = ActorNetwork(8, self.n_act).to(device)
-        self.Cnet = CriticNetwork(8, self.n_act).to(device)
+        self.Anet = ActorNetwork(self.n_state, self.n_act).to(device)
+        self.Cnet = CriticNetwork(self.n_state, self.n_act).to(device)
 
         self.Anet_T = deepcopy(self.Anet).to(device)
         self.Cnet_T = deepcopy(self.Cnet).to(device)

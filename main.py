@@ -55,6 +55,7 @@ def test(args):
     state=env.reset()
 
     print(env.action_space)
+    print(env.observation_space.shape)
     print(state.shape)
     #print(env.observation_space)
 
@@ -76,4 +77,4 @@ if __name__ == '__main__':
     args = parse()
     args.save_dir = f'{args.save_dir}_{args.agent}'
     os.makedirs(os.path.join(args.save_dir, args.name), exist_ok=True)
-    run(args)
+    test(args)
