@@ -49,6 +49,23 @@ class PGNetworkA(nn.Module):
 
         return prob, v
 
+class ValueNetwork(nn.Module):
+    def __init__(self, input_size):
+        super(ValueNetwork, self).__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(input_size, 512),
+            nn.SiLU(),
+
+            nn.Linear(512, 512),
+            nn.SiLU(),
+
+            nn.Linear(512, 1)
+        )
+
+    def forward(self, inputs):
+        return self.net(inputs)
+
 class ReplayBuffer:
     def __init__(self):
         self.buffer = []
@@ -240,6 +257,9 @@ class AgentA2C(AgentPG):
     def __init__(self, env, args):
         super().__init__(env, args, PGNetworkA)
 
+        self.Vnet = ValueNetwork(4).to(device)
+        self.optimizer_val = torch.optim.Adam(self.Vnet.parameters(), lr=args.lr)
+
     @torch.no_grad()
     def make_action(self, observation, test=True):
         """
@@ -247,7 +267,8 @@ class AgentA2C(AgentPG):
         Input:observation
         Return: action
         """
-        prob, v = self.Qnet(observation)
+        prob = self.Qnet(observation)
+        v = self.Vnet(observation)
         act = torch.softmax(prob.view(-1), dim=0).cpu().numpy()
         return torch.tensor(np.random.choice(range(act.shape[0]), p=act)), v
 
@@ -275,11 +296,16 @@ class AgentA2C(AgentPG):
         pred, v = self.Qnet(state)
 
         loss = self.criterion(pred, action)
-        loss = torch.mean(loss * reward_dc) + self.criterion_mse(vals, torch.tensor(reward_dc, device=vals.device))
+        loss = torch.mean(loss * reward_dc)
 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+        loss_v = self.criterion_mse(vals, torch.tensor(reward_dc, device=vals.device))
+        self.optimizer_val.zero_grad()
+        loss_v.backward()
+        self.optimizer_val.step()
 
         self.mem.clean()
 
