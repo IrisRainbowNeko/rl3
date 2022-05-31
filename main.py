@@ -3,7 +3,7 @@ import os
 
 from wrappers import make_env, ProcessFrame84
 import gym
-from argument import dqn_arguments, pg_arguments
+from argument import *
 import torch
 import cv2
 
@@ -18,7 +18,8 @@ def parse():
     parser.add_argument("--save_dir", default='output', type=str)
 
     #parser = dqn_arguments(parser)
-    parser = pg_arguments(parser)
+    #parser = pg_arguments(parser)
+    parser = ddpg_arguments(parser)
     args = parser.parse_args()
     return args
 
@@ -43,8 +44,8 @@ def run(args):
     if args.task=='ddpg':
         env_name = args.env_name
         env = gym.make(env_name)
-        from agent_dir.agent_ddpg import AgentPG
-        agent = AgentPG(env, args)
+        from agent_dir.agent_ddpg import AgentDDPG
+        agent = eval(args.agent)(env, args)
         agent.run()
 
 def test(args):
@@ -53,7 +54,7 @@ def test(args):
     env = gym.make(env_name)
     state=env.reset()
 
-    print(env.action_space.shape)
+    print(env.action_space)
     print(state.shape)
     #print(env.observation_space)
 

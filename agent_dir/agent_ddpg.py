@@ -65,8 +65,13 @@ class CriticNetwork(nn.Module):
             nn.Linear(256, 1)
         )
 
-    def forward(self, inputs):
-        return self.net(inputs)
+    def forward(self, s, a):
+
+        xa=self.base_act(a)
+        xs=self.base_state(s)
+        x=torch.cat((xa,xs), dim=1)
+
+        return self.net(x)
 
 class ReplayBuffer:
     def __init__(self, buffer_size):
@@ -95,27 +100,34 @@ class ReplayBuffer:
         self.buffer.clear()
 
 
-class AgentDQN(Agent):
-    def __init__(self, env, args, network=QNetwork):
+class AgentDDPG(Agent):
+    def __init__(self, env, args):
         """
         Initialize every things you need here.
         For example: building your model
         """
-        super(AgentDQN, self).__init__(env)
+        super(AgentDDPG, self).__init__(env)
 
         self.n_act = env.action_space.n
 
-        self.Qnet = network(self.n_act).to(device)
-        #self.Qnet = QNetworkCart(4, self.n_act).to(device)
-        self.Qnet_T = deepcopy(self.Qnet).to(device)
-        for m in self.Qnet_T.parameters():
+        self.Anet = ActorNetwork(8, self.n_act).to(device)
+        self.Cnet = CriticNetwork(8, self.n_act).to(device)
+
+        self.Anet_T = deepcopy(self.Anet).to(device)
+        self.Cnet_T = deepcopy(self.Cnet).to(device)
+        for m in self.Anet_T.parameters():
+            m.requires_grad=False
+        for m in self.Anet_T.parameters():
             m.requires_grad=False
 
         self.mem = ReplayBuffer(args.buffer_size)
         self.eps = args.eps_start
 
         self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.Qnet.parameters(), lr=args.lr)
+        self.optimizer = torch.optim.Adam(
+            [{'params': self.Anet.parameters()},
+            {'params': self.Cnet.parameters()}]
+            , lr=args.lr)
 
         self.args=args
         self.writer = SummaryWriter("log")
@@ -137,13 +149,14 @@ class AgentDQN(Agent):
 
     def train_step(self, state, action, reward, next_state, done):
         y = deepcopy(reward)
-        action = action.view(-1).unsqueeze(-1)
+        #action = action.view(-1).unsqueeze(-1)
 
         with torch.no_grad():
             not_done = ~done
-            y[not_done] += self.args.gamma*self.Qnet_T(next_state[not_done, ...]).max(dim=-1)[0]
+            acts=self.Anet_T(next_state[not_done, ...])
+            y[not_done] += self.args.gamma*self.Cnet_T(next_state[not_done, ...], acts)
 
-        pred = self.Qnet(state).gather(1, action).view(-1)
+        pred = self.Cnet(state, self.Anet(state)).view(-1)
 
         loss = self.criterion(pred, y)
         self.optimizer.zero_grad()
@@ -181,7 +194,8 @@ class AgentDQN(Agent):
 
                 if len(self.mem) >= self.args.batch_size*5:
                     if (step + 1) % self.args.target_update_freq == 0:
-                        self.Qnet_T.load_state_dict(self.Qnet.state_dict())
+                        self.Anet_T.load_state_dict(self.Anet.state_dict())
+                        self.Cnet_T.load_state_dict(self.Cnet.state_dict())
 
                     trans = self.mem.sample(self.args.batch_size)
                     loss = self.train_step(*trans)
@@ -200,8 +214,8 @@ class AgentDQN(Agent):
 
                 state = torch.tensor(next_state, device=device)
 
-                if (step + 1) % self.args.snap_save == 0:
-                    torch.save(self.Qnet.state_dict(), os.path.join(self.args.save_dir, self.args.name, f'net_{step + 1}.pth'))
+                #if (step + 1) % self.args.snap_save == 0:
+                #    torch.save({self.Anet.state_dict()}, os.path.join(self.args.save_dir, self.args.name, f'net_{step + 1}.pth'))
 
     @torch.no_grad()
     def make_action(self, observation, test=True):
@@ -211,9 +225,9 @@ class AgentDQN(Agent):
         Return:action
         """
         if test:
-            return self.Qnet(observation).argmax(dim=-1)
+            return self.Anet(observation)
         else:
-            return self.Qnet(observation).argmax(dim=-1) if random.random()>self.eps else torch.randint(0,self.n_act,(1,))
+            return self.Anet(observation) if random.random()>self.eps else torch.rand((self.n_act,))*2-1
 
     def run(self):
         """
@@ -221,26 +235,3 @@ class AgentDQN(Agent):
         """
         self.train()
         self.writer.close()
-
-class AgentDDQN(AgentDQN):
-    def train_step(self, state, action, reward, next_state, done):
-        y = deepcopy(reward)
-        action = action.view(-1).unsqueeze(-1)
-
-        with torch.no_grad():
-            not_done = ~done
-            Q_max_a = self.Qnet(next_state[not_done, ...]).max(dim=-1)[1].long().unsqueeze(-1)
-            y[not_done] += self.args.gamma*self.Qnet_T(next_state[not_done, ...]).gather(1, Q_max_a).view(-1)
-
-        pred = self.Qnet(state).gather(1, action).view(-1)
-
-        loss = self.criterion(pred, y)
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-
-        return loss.item()
-
-class AgentDuelingDQN(AgentDQN):
-    def __init__(self, env, args):
-        super().__init__(env, args, network=DuelingQNetwork)
