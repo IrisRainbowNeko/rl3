@@ -214,13 +214,11 @@ class AgentPGA(AgentPG):
         vals=vals.view(-1)
         reward_dc = torch.empty_like(reward, device=device)
         R=0
-        G=[]
         for t in reversed(range(0, len(reward))):  # 反向计算
             R = R * self.args.gamma + reward[t]
-            G.insert(0, R)
             reward_dc[t] = R
 
-        R -= vals
+        reward_dc -= vals
 
         reward_dc -= reward_dc.mean()
         reward_dc /= reward_dc.std()
