@@ -80,9 +80,6 @@ class AgentPG(Agent):
         self.n_act = env.action_space.n
 
         self.Qnet = network(4, self.n_act).to(device)
-        self.Qnet_T = deepcopy(self.Qnet).to(device)
-        for m in self.Qnet_T.parameters():
-            m.requires_grad=False
 
         self.mem = ReplayBuffer()
 
@@ -104,7 +101,9 @@ class AgentPG(Agent):
         """
         pass
 
-    def train_step(self, state, action, reward, ep_r):
+    def train_step(self, ep_r):
+        state, action, reward = self.mem.sample()
+
         reward_dc = torch.empty_like(reward, device=device)
         running_add=0
         for t in reversed(range(0, len(reward))):  # 反向计算
@@ -162,8 +161,7 @@ class AgentPG(Agent):
                 if done:  # or step>self.args.n_frames:
                     self.writer.add_scalar("ep_r", ep_r, global_step=episode)
 
-                    trans = self.mem.sample()
-                    loss = self.train_step(*trans, ep_r)
+                    loss = self.train_step(ep_r)
                     logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r}, loss:{loss}')
 
                     if (episode + 1) % self.args.snap_save == 0:
@@ -210,7 +208,9 @@ class AgentPGA(AgentPG):
         self.mem.push(*[torch.tensor(x, device='cpu') for x in [state, action, reward, v]])
         return next_state, reward, done
 
-    def train_step(self, state, action, reward, vals, ep_r):
+    def train_step(self, ep_r):
+        state, action, reward, vals = self.mem.sample()
+
         vals=vals.view(-1)
         reward_dc = torch.empty_like(reward, device=device)
         R=0
@@ -227,6 +227,55 @@ class AgentPGA(AgentPG):
 
         loss = self.criterion(pred, action)
         loss = torch.mean(loss * reward_dc) #+ self.criterion_mse(vals, torch.tensor(G, device=vals.device))
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        self.mem.clean()
+
+        return loss.item()
+
+class AgentA2C(AgentPG):
+    def __init__(self, env, args):
+        super().__init__(env, args, PGNetworkA)
+
+    @torch.no_grad()
+    def make_action(self, observation, test=True):
+        """
+        Return predicted action of your agent
+        Input:observation
+        Return: action
+        """
+        prob, v = self.Qnet(observation)
+        act = torch.softmax(prob.view(-1), dim=0).cpu().numpy()
+        return torch.tensor(np.random.choice(range(act.shape[0]), p=act)), v
+
+    def env_step(self, state):
+        action, v = self.make_action(state.unsqueeze(0).float(), self.args.test)
+        next_state, reward, done, info = self.env.step(action.item())
+        self.mem.push(*[torch.tensor(x, device='cpu') for x in [state, action, reward, v]])
+        return next_state, reward, done
+
+    def train_step(self, ep_r):
+        state, action, reward, vals = self.mem.sample()
+
+        vals = vals.view(-1)
+        reward_dc = torch.empty_like(reward, device=device)
+        R = 0
+        for t in reversed(range(0, len(reward))):  # 反向计算
+            R = R * self.args.gamma + reward[t]
+            reward_dc[t] = R
+
+        reward_dc -= vals
+
+        reward_dc -= reward_dc.mean()
+        reward_dc /= reward_dc.std()
+
+        pred, v = self.Qnet(state)
+
+        loss = self.criterion(pred, action)
+        loss = torch.mean(loss * reward_dc) + self.criterion_mse(vals, torch.tensor(reward_dc, device=vals.device))
 
         self.optimizer.zero_grad()
         loss.backward()

@@ -27,7 +27,7 @@ def run(args):
     if args.task=='pg':
         env_name = args.env_name
         env = gym.make(env_name)
-        from agent_dir.agent_pg import AgentPG, AgentPGA
+        from agent_dir.agent_pg import AgentPG, AgentPGA, AgentA2C
         agent = eval(args.agent)(env, args)
         agent.run()
 
