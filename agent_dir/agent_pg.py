@@ -60,7 +60,7 @@ class ReplayBuffer:
         return (state.float(), *args)
 
     def push(self, *transition):
-        self.buffer.append(transition)
+        self.buffer.append(self.proc(*transition))
 
     def sample(self):
         return [torch.stack(x, dim=0).to(device) for x in list(zip(*self.buffer))]
