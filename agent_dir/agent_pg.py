@@ -302,6 +302,7 @@ class AgentA2C(AgentPG):
         loss.backward()
         self.optimizer.step()
 
+        vals=self.Vnet(state).view(-1)
         loss_v = self.criterion_mse(vals, torch.tensor(reward_dc, device=vals.device))
         self.optimizer_val.zero_grad()
         loss_v.backward()
