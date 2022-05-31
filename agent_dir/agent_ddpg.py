@@ -82,7 +82,7 @@ class ReplayBuffer:
         return len(self.buffer)
 
     def proc(self, state, action, reward, next_state, done):
-        return state.float(), action, reward, next_state.float(), done
+        return state.float(), action.float(), reward, next_state.float(), done
 
     def push(self, *transition):
         if len(self.buffer)>=self.buffer_size:
