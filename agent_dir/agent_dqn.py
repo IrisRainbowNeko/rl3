@@ -165,7 +165,7 @@ class AgentDQN(Agent):
         loss = self.criterion(pred, y)
         self.optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm(self.Qnet.parameters(), self.args.grad_norm_clip)
+        torch.nn.utils.clip_grad_norm_(parameters=self.Qnet.parameters(), max_norm=self.args.grad_norm_clip, norm_type=2)
         self.optimizer.step()
 
         return loss.item()
