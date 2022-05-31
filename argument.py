@@ -74,10 +74,17 @@ def ddpg_arguments(parser):
     parser.add_argument('--agent', default="AgentDDPG", help='agent name')
 
     parser.add_argument("--seed", default=11037, type=int)
+    parser.add_argument("--buffer_size", default=int(1e5), type=int)
     parser.add_argument("--hidden_size", default=16, type=int)
     parser.add_argument("--lr", default=0.02, type=float)
+    parser.add_argument("--batch_size", default=32, type=int)
     parser.add_argument("--gamma", default=0.99, type=float)
     parser.add_argument("--grad_norm_clip", default=10, type=float)
+
+
+    parser.add_argument("--eps_start", default=1.0, type=float)
+    parser.add_argument("--eps_end", default=0.01, type=float)
+    parser.add_argument("--eps_decay", default=10000, type=float)
 
     parser.add_argument("--test", default=False, type=bool)
     parser.add_argument("--use_cuda", default=True, type=bool)
