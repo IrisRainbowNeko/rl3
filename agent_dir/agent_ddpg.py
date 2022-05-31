@@ -146,7 +146,7 @@ class AgentDDPG(Agent):
         pass
 
     def train_step(self, state, action, reward, next_state, done):
-        y = deepcopy(reward)
+        y = deepcopy(reward.float())
         action = action.view(-1,2)
 
         #Actor
@@ -232,9 +232,9 @@ class AgentDDPG(Agent):
         Return:action
         """
         if test:
-            return self.Anet(observation)
+            return self.Anet(observation).view(-1)
         else:
-            return self.Anet(observation) if random.random()>self.eps else torch.rand((self.n_act,))*2-1
+            return self.Anet(observation).view(-1) if random.random()>self.eps else torch.rand((self.n_act,))*2-1
 
     def run(self):
         """
