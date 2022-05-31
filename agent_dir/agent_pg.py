@@ -255,7 +255,7 @@ class AgentPGA(AgentPG):
 
 class AgentA2C(AgentPG):
     def __init__(self, env, args):
-        super().__init__(env, args, PGNetworkA)
+        super().__init__(env, args)
 
         self.Vnet = ValueNetwork(4).to(device)
         self.optimizer_val = torch.optim.Adam(self.Vnet.parameters(), lr=args.lr)
