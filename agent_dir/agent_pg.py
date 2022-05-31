@@ -293,7 +293,7 @@ class AgentA2C(AgentPG):
         reward_dc -= reward_dc.mean()
         reward_dc /= reward_dc.std()
 
-        pred, v = self.Qnet(state)
+        pred = self.Qnet(state)
 
         loss = self.criterion(pred, action)
         loss = torch.mean(loss * reward_dc)
