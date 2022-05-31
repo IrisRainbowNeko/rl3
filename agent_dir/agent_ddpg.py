@@ -147,7 +147,7 @@ class AgentDDPG(Agent):
 
     def train_step(self, state, action, reward, next_state, done):
         y = deepcopy(reward)
-        action = action.view(-1,2).unsqueeze(-1)
+        action = action.view(-1,2)
 
         #Actor
         pred = self.Cnet(state, self.Anet(state)).view(-1)
