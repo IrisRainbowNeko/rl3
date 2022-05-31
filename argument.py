@@ -89,5 +89,6 @@ def ddpg_arguments(parser):
     parser.add_argument("--test", default=False, type=bool)
     parser.add_argument("--use_cuda", default=True, type=bool)
     parser.add_argument("--n_frames", default=int(30000), type=int)
+    parser.add_argument("--target_update_freq", default=1000, type=int)
 
     return parser
