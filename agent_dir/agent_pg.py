@@ -211,15 +211,16 @@ class AgentPGA(AgentPG):
         return next_state, reward, done
 
     def train_step(self, state, action, reward, vals, ep_r):
+        vals=vals.view(-1)
         reward_dc = torch.empty_like(reward, device=device)
-        running_add=0
         R=0
         G=[]
         for t in reversed(range(0, len(reward))):  # 反向计算
             R = R * self.args.gamma + reward[t]
             G.insert(0, R)
-            running_add = R-vals[t]
-            reward_dc[t] = running_add
+            reward_dc[t] = R
+
+        R -= vals
 
         reward_dc -= reward_dc.mean()
         reward_dc /= reward_dc.std()
@@ -227,7 +228,7 @@ class AgentPGA(AgentPG):
         pred, v = self.Qnet(state)
 
         loss = self.criterion(pred, action)
-        loss = torch.mean(loss * reward_dc) + self.criterion_mse(vals, torch.tensor(G, device=vals.device))
+        loss = torch.mean(loss * reward_dc) #+ self.criterion_mse(vals, torch.tensor(G, device=vals.device))
 
         self.optimizer.zero_grad()
         loss.backward()
