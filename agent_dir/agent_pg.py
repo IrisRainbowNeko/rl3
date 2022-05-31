@@ -224,7 +224,7 @@ class AgentPGA(AgentPG):
         reward_dc -= reward_dc.mean()
         reward_dc /= reward_dc.std()
 
-        pred = self.Qnet(state)
+        pred, v = self.Qnet(state)
 
         loss = self.criterion(pred, action)
         loss = torch.mean(loss * reward_dc) + self.criterion_mse(vals, torch.tensor(G, device=vals.device))
