@@ -52,8 +52,8 @@ class QNetwork(nn.Module):
         self.head=nn.Linear(512, output_size)
 
     def forward(self, x):
-        x=self.head(x)
-        return self.net(x)
+        x=self.net(x)
+        return self.head(x)
 
 class DuelingQNetwork(QNetwork):
     def __init__(self, output_size):
