@@ -154,6 +154,7 @@ class AgentDDPG(Agent):
         pred = self.Cnet(state, self.Anet(state)).view(-1)
         A_loss = -torch.mean(pred)
         self.optimizer_A.zero_grad()
+        torch.nn.utils.clip_grad_norm_(parameters=self.Anet.parameters(), max_norm=self.args.grad_norm_clip, norm_type=2)
         A_loss.backward()
         self.optimizer_A.step()
 
@@ -167,6 +168,7 @@ class AgentDDPG(Agent):
 
         loss = self.criterion(pred, y)
         self.optimizer_C.zero_grad()
+        torch.nn.utils.clip_grad_norm_(parameters=self.Cnet.parameters(), max_norm=self.args.grad_norm_clip, norm_type=2)
         loss.backward()
         self.optimizer_C.step()
 
