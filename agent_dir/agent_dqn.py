@@ -47,20 +47,24 @@ class QNetwork(nn.Module):
 
             nn.Linear(5*5*64, 512),
             nn.SiLU(),
-            nn.Linear(512, output_size)
         )
 
-    def forward(self, inputs):
-        return self.net(inputs)
+        self.head=nn.Linear(512, output_size)
+
+    def forward(self, x):
+        x=self.head(x)
+        return self.net(x)
 
 class DuelingQNetwork(QNetwork):
     def __init__(self, output_size):
-        super().__init__(output_size+1)
+        super().__init__(output_size)
+        self.head_A = nn.Linear(512, output_size)
+        self.head_V = nn.Linear(512, 1)
 
     def forward(self, inputs):
         out = self.net(inputs)
-        advantage=out[:,:self.output_size-1]
-        value=out[:,self.output_size-1].unsqueeze(-1)
+        advantage=self.head_A(out)
+        value=self.head_V(out)
         return value + advantage - advantage.mean()
 
 class QNetworkCart(nn.Module):
