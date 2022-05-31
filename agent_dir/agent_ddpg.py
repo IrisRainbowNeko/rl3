@@ -124,10 +124,8 @@ class AgentDDPG(Agent):
         self.eps = args.eps_start
 
         self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(
-            [{'params': self.Anet.parameters()},
-            {'params': self.Cnet.parameters()}]
-            , lr=args.lr)
+        self.optimizer_A = torch.optim.Adam(self.Anet.parameters(), lr=args.lr)
+        self.optimizer_C = torch.optim.Adam(self.Cnet.parameters(), lr=args.lr)
 
         self.args=args
         self.writer = SummaryWriter("log")
@@ -149,21 +147,29 @@ class AgentDDPG(Agent):
 
     def train_step(self, state, action, reward, next_state, done):
         y = deepcopy(reward)
-        #action = action.view(-1).unsqueeze(-1)
+        action = action.view(-1).unsqueeze(-1)
 
+        #Actor
+        pred = self.Cnet(state, self.Anet(state)).view(-1)
+        A_loss = -torch.mean(pred)
+        self.optimizer_A.zero_grad()
+        A_loss.backward()
+        self.optimizer_A.step()
+
+        #Critic
         with torch.no_grad():
             not_done = ~done
             acts=self.Anet_T(next_state[not_done, ...])
             y[not_done] += self.args.gamma*self.Cnet_T(next_state[not_done, ...], acts)
 
-        pred = self.Cnet(state, self.Anet(state)).view(-1)
+        pred = self.Cnet(state, action).view(-1)
 
         loss = self.criterion(pred, y)
-        self.optimizer.zero_grad()
+        self.optimizer_C.zero_grad()
         loss.backward()
-        self.optimizer.step()
+        self.optimizer_C.step()
 
-        return loss.item()
+        return loss.item(), A_loss.item()
 
     def train(self):
         """
@@ -198,11 +204,12 @@ class AgentDDPG(Agent):
                         self.Cnet_T.load_state_dict(self.Cnet.state_dict())
 
                     trans = self.mem.sample(self.args.batch_size)
-                    loss = self.train_step(*trans)
+                    loss, A_loss = self.train_step(*trans)
 
                     loss_sum += loss
                     if step%self.args.snap==0:
                         self.writer.add_scalar("loss", loss, global_step=step)
+                        self.writer.add_scalar("A_loss", A_loss, global_step=step)
                         logger.info(f'[{episode}/{n_ep}] <{step}> loss:{loss_sum/self.args.snap}, eps:{self.eps}')
                         loss_sum = 0
                 step += 1
