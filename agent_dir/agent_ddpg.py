@@ -147,7 +147,7 @@ class AgentDDPG(Agent):
 
     def train_step(self, state, action, reward, next_state, done):
         y = deepcopy(reward)
-        action = action.view(-1).unsqueeze(-1)
+        action = action.view(-1,2).unsqueeze(-1)
 
         #Actor
         pred = self.Cnet(state, self.Anet(state)).view(-1)
@@ -160,7 +160,7 @@ class AgentDDPG(Agent):
         with torch.no_grad():
             not_done = ~done
             acts=self.Anet_T(next_state[not_done, ...])
-            y[not_done] += self.args.gamma*self.Cnet_T(next_state[not_done, ...], acts)
+            y[not_done] += self.args.gamma*self.Cnet_T(next_state[not_done, ...], acts).view(-1)
 
         pred = self.Cnet(state, action).view(-1)
 
