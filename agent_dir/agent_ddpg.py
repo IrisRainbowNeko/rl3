@@ -186,7 +186,7 @@ class AgentDDPG(Agent):
                 action = self.make_action(state.unsqueeze(0).float(), self.args.test).detach().cpu()
                 self.eps = self.eps_scd.step()
 
-                next_state, reward, done, info = self.env.step(action.item())
+                next_state, reward, done, info = self.env.step(action.numpy())
 
                 ep_r += reward
 
