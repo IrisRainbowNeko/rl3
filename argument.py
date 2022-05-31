@@ -10,8 +10,8 @@ def dqn_arguments(parser):
         parser.add_argument('--batch_size', type=int, default=32, help='batch size for training')
         parser.add_argument('--learning_rate', type=float, default=0.01, help='learning rate for training')
     """
-    parser.add_argument('--env_name', default="PongNoFrameskip-v4", help='environment name')
-    #parser.add_argument('--env_name', default="CartPole-v0", help='environment name')
+    #parser.add_argument('--env_name', default="PongNoFrameskip-v4", help='environment name')
+    parser.add_argument('--env_name', default="LunarLanderContinuous-v2", help='environment name')
 
     parser.add_argument('--agent', default="AgentDQN", help='agent name')
 

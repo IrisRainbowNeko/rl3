@@ -9,8 +9,7 @@ import cv2
 
 def parse():
     parser = argparse.ArgumentParser(description="SYSU_RL_HW2")
-    parser.add_argument('--train_pg', default=False, type=bool, help='whether train policy gradient')
-    parser.add_argument('--train_dqn', default=True, type=bool, help='whether train DQN')
+    parser.add_argument('--task', default='pg', type=str, choices=['pg', 'dqn', 'ddpg'], help='whether train policy gradient')
 
     parser.add_argument("--render", default=False, type=bool)
     parser.add_argument("--snap", default=100, type=float)
@@ -25,14 +24,14 @@ def parse():
 
 
 def run(args):
-    if args.train_pg:
+    if args.task=='pg':
         env_name = args.env_name
         env = gym.make(env_name)
-        from agent_dir.agent_pg import AgentPG
-        agent = AgentPG(env, args)
+        from agent_dir.agent_pg import AgentPG, AgentPGA
+        agent = eval(args.agent)(env, args)
         agent.run()
 
-    if args.train_dqn:
+    if args.task=='dqn':
         env_name = args.env_name
         env = make_env(env_name)
         #env = gym.make(env_name)
@@ -41,12 +40,20 @@ def run(args):
         agent = eval(args.agent)(env, args)
         agent.run()
 
+    if args.task=='ddpg':
+        env_name = args.env_name
+        env = gym.make(env_name)
+        from agent_dir.agent_ddpg import AgentPG
+        agent = AgentPG(env, args)
+        agent.run()
+
 def test(args):
     env_name = args.env_name
-    env = make_env(env_name)
+    #env = make_env(env_name)
+    env = gym.make(env_name)
     state=env.reset()
 
-    print(env.action_space.n)
+    print(env.action_space.shape)
     print(state.shape)
     #print(env.observation_space)
 
@@ -68,4 +75,4 @@ if __name__ == '__main__':
     args = parse()
     args.save_dir = f'{args.save_dir}_{args.agent}'
     os.makedirs(os.path.join(args.save_dir, args.name), exist_ok=True)
-    run(args)
+    test(args)

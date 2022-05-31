@@ -28,6 +28,26 @@ class PGNetwork(nn.Module):
     def forward(self, inputs):
         return self.net(inputs)
 
+class PGNetworkA(nn.Module):
+    def __init__(self, input_size, output_size):
+        super(PGNetworkA, self).__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(input_size, 512),
+            nn.SiLU(),
+
+            nn.Linear(512, 512),
+            nn.SiLU(),
+        )
+        self.head=nn.Linear(512, output_size)
+        self.headv=nn.Linear(512, 1)
+
+    def forward(self, x):
+        x=self.net(x)
+        prob=self.head(x)
+        v=self.headv(x)
+
+        return prob, v
 
 class ReplayBuffer:
     def __init__(self):
@@ -40,7 +60,7 @@ class ReplayBuffer:
         return state.float(), action, reward
 
     def push(self, *transition):
-        self.buffer.append(self.proc(*transition))
+        self.buffer.append(*transition)
 
     def sample(self):
         return [torch.stack(x, dim=0).to(device) for x in list(zip(*self.buffer))]
@@ -67,6 +87,7 @@ class AgentPG(Agent):
         self.mem = ReplayBuffer()
 
         self.criterion = nn.CrossEntropyLoss(reduction='none')
+        self.criterion_mse = nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.Qnet.parameters(), lr=args.lr)
 
         self.args=args
@@ -83,7 +104,7 @@ class AgentPG(Agent):
         """
         pass
 
-    def train_step(self, state, action, reward):
+    def train_step(self, state, action, reward, ep_r):
         reward_dc = torch.empty_like(reward, device=device)
         running_add=0
         for t in reversed(range(0, len(reward))):  # 反向计算
@@ -106,6 +127,12 @@ class AgentPG(Agent):
 
         return loss.item()
 
+    def env_step(self, state):
+        action = self.make_action(state.unsqueeze(0).float(), self.args.test)
+        next_state, reward, done, info = self.env.step(action.item())
+        self.mem.push(*[torch.tensor(x, device='cpu') for x in [state, action, reward]])
+        return next_state, reward, done
+
     def train(self):
         """
         Implement your training algorithm here
@@ -125,12 +152,9 @@ class AgentPG(Agent):
                 if self.args.render:
                     self.env.render()
 
-                action = self.make_action(state.unsqueeze(0).float(), self.args.test)
-                next_state, reward, done, info = self.env.step(action.item())
+                next_state, reward, done = self.env_step(state)
 
                 ep_r += reward
-
-                self.mem.push(*[torch.tensor(x, device='cpu') for x in [state, action, reward]])
 
                 state = torch.tensor(next_state, device=device)
                 step += 1
@@ -139,7 +163,7 @@ class AgentPG(Agent):
                     self.writer.add_scalar("ep_r", ep_r, global_step=episode)
 
                     trans = self.mem.sample()
-                    loss = self.train_step(*trans)
+                    loss = self.train_step(*trans, ep_r)
                     logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r}, loss:{loss}')
 
                     if (episode + 1) % self.args.snap_save == 0:
@@ -164,3 +188,51 @@ class AgentPG(Agent):
         """
         self.train()
         self.writer.close()
+
+class AgentPGA(AgentPG):
+    def __init__(self, env, args):
+        super().__init__(env, args, PGNetworkA)
+
+    @torch.no_grad()
+    def make_action(self, observation, test=True):
+        """
+        Return predicted action of your agent
+        Input:observation
+        Return: action
+        """
+        prob, v=self.Qnet(observation)
+        act = torch.softmax(prob.view(-1), dim=0).cpu().numpy()
+        return torch.tensor(np.random.choice(range(act.shape[0]), p=act)), v
+
+    def env_step(self, state):
+        action, v = self.make_action(state.unsqueeze(0).float(), self.args.test)
+        next_state, reward, done, info = self.env.step(action.item())
+        self.mem.push(*[torch.tensor(x, device='cpu') for x in [state, action, reward, v]])
+        return next_state, reward, done
+
+    def train_step(self, state, action, reward, vals, ep_r):
+        reward_dc = torch.empty_like(reward, device=device)
+        running_add=0
+        R=0
+        G=[]
+        for t in reversed(range(0, len(reward))):  # 反向计算
+            R = R * self.args.gamma + reward[t]
+            G.insert(0, R)
+            running_add = R-vals[t]
+            reward_dc[t] = running_add
+
+        reward_dc -= reward_dc.mean()
+        reward_dc /= reward_dc.std()
+
+        pred = self.Qnet(state)
+
+        loss = self.criterion(pred, action)
+        loss = torch.mean(loss * reward_dc) + self.criterion_mse(vals, torch.tensor(G, device=vals.device))
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        self.mem.clean()
+
+        return loss.item()
