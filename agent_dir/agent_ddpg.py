@@ -108,7 +108,7 @@ class AgentDDPG(Agent):
         """
         super(AgentDDPG, self).__init__(env)
 
-        self.n_act = env.action_space.n
+        self.n_act = env.action_space.shape[0]
 
         self.Anet = ActorNetwork(8, self.n_act).to(device)
         self.Cnet = CriticNetwork(8, self.n_act).to(device)
