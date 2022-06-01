@@ -15,6 +15,33 @@ from loguru import logger
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
+class DotProductAttention(nn.Module):
+    def __init__(self, query_dim):
+        super().__init__()
+
+        self.scale = 1.0 / np.sqrt(query_dim)
+        self.softmax = nn.Softmax(dim=2)
+
+    def forward(self, query, keys, values):
+        # query: [B,Q] (hidden state, decoder output, etc.)
+        # keys: [B,K] (encoder outputs)
+        # values: [B,V] (encoder outputs)
+        # assume Q == K
+
+        # compute energy
+        query = query.unsqueeze(1)  # [B,Q] -> [B,1,Q]
+        keys = keys.unsqueeze(2) # [B,K,1]
+
+        energy = torch.bmm(keys, query)  # [B,K,1]*[B,1,Q] = [B,K,Q]
+        energy = self.softmax(energy.mul_(self.scale))
+
+        # weight values
+        values = values.unsqueeze(2)  # [B,V] -> [B,V,1]
+        combo = torch.bmm(energy, values).squeeze(2)  # [B,K,Q]*[B,V,1] -> [B,V]
+
+        return combo
+
 class ActorNetwork(nn.Module):
     def __init__(self, state_size, action_size):
         super(ActorNetwork, self).__init__()
@@ -48,6 +75,9 @@ class CriticNetwork(nn.Module):
         self.base_state = nn.Sequential(
             nn.Linear(state_size, 512),
             nn.SiLU(),
+
+            nn.Linear(512, 512),
+            nn.SiLU(),
         )
 
         self.base_act = nn.Sequential(
@@ -55,10 +85,9 @@ class CriticNetwork(nn.Module):
             nn.SiLU(),
         )
 
-        self.net = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.SiLU(),
+        self.attention = DotProductAttention(512)
 
+        self.net = nn.Sequential(
             nn.Linear(512, 256),
             nn.SiLU(),
 
@@ -69,7 +98,8 @@ class CriticNetwork(nn.Module):
 
         xa=self.base_act(a)
         xs=self.base_state(s)
-        x=torch.cat((xa,xs), dim=1)
+        #x=torch.cat((xa,xs), dim=1)
+        x=self.attention(xs,xa,xs)
 
         return self.net(x)
 
