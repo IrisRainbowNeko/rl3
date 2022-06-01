@@ -78,4 +78,4 @@ if __name__ == '__main__':
     args = parse()
     args.save_dir = f'{args.save_dir}_{args.agent}'
     os.makedirs(os.path.join(args.save_dir, args.name), exist_ok=True)
-    test(args)
+    run(args)
