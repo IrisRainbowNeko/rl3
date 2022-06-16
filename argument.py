@@ -18,7 +18,7 @@ def maddpg_arguments(parser):
     parser.add_argument("--seed", default=11037, type=int)
     parser.add_argument("--buffer_size", default=int(1e5), type=int)
     parser.add_argument("--hidden_size", default=16, type=int)
-    parser.add_argument("--lr", default=0.02, type=float)
+    parser.add_argument("--lr", default=0.001, type=float)
     parser.add_argument("--batch_size", default=32, type=int)
     parser.add_argument("--gamma", default=0.99, type=float)
     parser.add_argument("--grad_norm_clip", default=1, type=float)
