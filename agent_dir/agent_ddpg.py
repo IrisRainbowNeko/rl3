@@ -139,7 +139,7 @@ class AgentDDPG(Agent):
         super(AgentDDPG, self).__init__(env)
 
         self.n_act = env.action_space.shape[0]
-        self.n_state = env.observation_space.shape[0]
+        self.n_state = env.observation_space[0].shape[0]
 
         self.Anet = ActorNetwork(self.n_state, self.n_act).to(device)
         self.Cnet = CriticNetwork(self.n_state, self.n_act).to(device)
@@ -236,8 +236,8 @@ class AgentDDPG(Agent):
                     #if (step + 1) % self.args.target_update_freq == 0:
                     #    self.Anet_T.load_state_dict(self.Anet.state_dict())
                     #    self.Cnet_T.load_state_dict(self.Cnet.state_dict())
-                    self.ema.update_average(self.Anet_T, self.Anet)
-                    self.ema.update_average(self.Cnet_T, self.Cnet)
+                    self.ema.update_model_average(self.Anet_T, self.Anet)
+                    self.ema.update_model_average(self.Cnet_T, self.Cnet)
 
                     trans = self.mem.sample(self.args.batch_size)
                     loss, A_loss = self.train_step(*trans)
