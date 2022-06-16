@@ -85,21 +85,21 @@ class CriticNetwork(nn.Module):
             nn.SiLU(),
         )
 
-        self.attention = DotProductAttention(512)
+        #self.attention = DotProductAttention(512)
 
         self.net = nn.Sequential(
-            nn.Linear(512, 256),
+            nn.Linear(1024, 512),
             nn.SiLU(),
 
-            nn.Linear(256, 1)
+            nn.Linear(512, 1)
         )
 
     def forward(self, s, a):
 
         xa=self.base_act(a)
         xs=self.base_state(s)
-        #x=torch.cat((xa,xs), dim=1)
-        x=self.attention(xs,xa,xs)
+        x=torch.cat((xa,xs), dim=1)
+        #x=self.attention(xs,xa,xs)
 
         return self.net(x)
 
@@ -162,6 +162,7 @@ class AgentDDPG(Agent):
         self.writer = SummaryWriter("log")
 
         self.eps_scd = EpsScheduler(args.eps_start, args.eps_end, args.eps_decay)
+        self.ema=EMA(args.ema)
 
     
     def init_game_setting(self):
@@ -232,9 +233,11 @@ class AgentDDPG(Agent):
                 self.mem.push(*[torch.tensor(x, device='cpu') for x in [state, action, reward, next_state, done]])
 
                 if len(self.mem) >= self.args.batch_size*5:
-                    if (step + 1) % self.args.target_update_freq == 0:
-                        self.Anet_T.load_state_dict(self.Anet.state_dict())
-                        self.Cnet_T.load_state_dict(self.Cnet.state_dict())
+                    #if (step + 1) % self.args.target_update_freq == 0:
+                    #    self.Anet_T.load_state_dict(self.Anet.state_dict())
+                    #    self.Cnet_T.load_state_dict(self.Cnet.state_dict())
+                    self.ema.update_average(self.Anet_T, self.Anet)
+                    self.ema.update_average(self.Cnet_T, self.Cnet)
 
                     trans = self.mem.sample(self.args.batch_size)
                     loss, A_loss = self.train_step(*trans)
