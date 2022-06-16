@@ -75,23 +75,26 @@ class CriticNetwork(nn.Module):
         # self.net.classifier[-1]=nn.Linear(4096, output_size)
 
         self.base_state = nn.Sequential(
-            nn.Linear(state_size, 512),
-            nn.SiLU(),
+            nn.Linear(state_size, 1024),
+            nn.LeakyReLU(),
 
-            nn.Linear(512, 512),
-            nn.SiLU(),
+            nn.Linear(1024, 512),
+            nn.LeakyReLU(),
         )
 
         self.base_act = nn.Sequential(
-            nn.Linear(action_size, 512),
-            nn.SiLU(),
+            nn.Linear(action_size, 1024),
+            nn.LeakyReLU(),
+
+            nn.Linear(1024, 512),
+            nn.LeakyReLU(),
         )
 
         # self.attention = DotProductAttention(512)
 
         self.net = nn.Sequential(
             nn.Linear(1024, 512),
-            nn.SiLU(),
+            nn.LeakyReLU(),
 
             nn.Linear(512, 1)
         )
