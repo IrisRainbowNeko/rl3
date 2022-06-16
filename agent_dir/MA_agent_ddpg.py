@@ -50,13 +50,13 @@ class ActorNetwork(nn.Module):
 
         self.net = nn.Sequential(
             nn.Linear(state_size, 512),
-            nn.SiLU(),
+            nn.LeakyReLU(),
 
             nn.Linear(512, 512),
-            nn.SiLU(),
+            nn.LeakyReLU(),
 
             nn.Linear(512, action_size),
-            nn.Tanh()
+            nn.Sigmoid()
         )
 
     def forward(self, inputs):
@@ -183,8 +183,7 @@ class AgentDDPG():
 
         loss = self.criterion(pred, y)
         self.optimizer_C.zero_grad()
-        torch.nn.utils.clip_grad_norm_(parameters=self.Cnet.parameters(), max_norm=self.args.grad_norm_clip,
-                                       norm_type=2)
+        torch.nn.utils.clip_grad_norm_(parameters=self.Cnet.parameters(), max_norm=self.args.grad_norm_clip, norm_type=2)
         loss.backward()
         self.optimizer_C.step()
 
@@ -193,8 +192,7 @@ class AgentDDPG():
         pred = self.Cnet(state_all.flatten(1), action_all.flatten(1)).view(-1)
         A_loss = -torch.mean(pred)
         self.optimizer_A.zero_grad()
-        torch.nn.utils.clip_grad_norm_(parameters=self.Anet.parameters(), max_norm=self.args.grad_norm_clip,
-                                       norm_type=2)
+        torch.nn.utils.clip_grad_norm_(parameters=self.Anet.parameters(), max_norm=self.args.grad_norm_clip, norm_type=2)
         A_loss.backward()
         self.optimizer_A.step()
 
@@ -290,7 +288,7 @@ class MA_DDPG():
 
                 if done_all.all() or step_inter>self.args.max_step:
                     self.writer.add_scalar("ep_r", ep_r, global_step=episode)
-                    logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r}, len_mem:{len(self.mem)}, eps:{self.agent_list[0].eps}')
+                    logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r/step_inter}, len_mem:{len(self.mem)}, eps:{self.agent_list[0].eps}')
                     break
 
                 state_all = torch.tensor(next_state_all, device=device)

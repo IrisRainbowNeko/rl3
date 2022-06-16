@@ -50,7 +50,7 @@ def test(args):
     state=env.reset()
 
     print(env)
-    print(env.action_space[0].n)
+    print(env.action_space[0])
     print(env.observation_space[0].high)
     print(dir(env.observation_space[0]))
     print(state.shape)
