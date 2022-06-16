@@ -157,7 +157,7 @@ class AgentDDPG():
         self.eps = args.eps_start
 
         #self.criterion = nn.MSELoss()
-        self.criterion = lambda x,y:torch.mean(torch.log(torch.cosh(x-y)))
+        self.criterion = lambda x,y:torch.mean(torch.log(torch.cosh(2*(x-y))))
         self.optimizer_A = torch.optim.Adam(self.Anet.parameters(), lr=args.lr)
         self.optimizer_C = torch.optim.Adam(self.Cnet.parameters(), lr=args.lr)
 
