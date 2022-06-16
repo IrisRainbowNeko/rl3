@@ -171,6 +171,9 @@ class AgentDDPG():
         self.ema = EMA(args.ema)
 
     def train_step(self, state_all, action_all, action_all_T, reward, next_state_all, done):
+        self.ema.update_model_average(self.Anet_T, self.Anet)
+        self.ema.update_model_average(self.Cnet_T, self.Cnet)
+
         y = deepcopy(reward.float())
         action_all = deepcopy(action_all)
 
@@ -183,8 +186,8 @@ class AgentDDPG():
             y += self.args.gamma * self.Cnet_T(next_state_all.flatten(1), acts).view(-1)
 
         pred = self.Cnet(state_all.flatten(1), action_all.flatten(1)).view(-1)
-
         loss = self.criterion(pred, y)
+
         self.optimizer_C.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(parameters=self.Cnet.parameters(), max_norm=self.args.grad_norm_clip, norm_type=2)
@@ -194,6 +197,7 @@ class AgentDDPG():
         action_all[:,self.agent_id,:]=self.Anet(state_all[:,self.agent_id,:])
         pred = self.Cnet(state_all.flatten(1), action_all.flatten(1)).view(-1)
         A_loss = -torch.mean(pred)
+
         self.optimizer_A.zero_grad()
         A_loss.backward()
         torch.nn.utils.clip_grad_norm_(parameters=self.Anet.parameters(), max_norm=self.args.grad_norm_clip, norm_type=2)
