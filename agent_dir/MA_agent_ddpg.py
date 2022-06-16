@@ -211,7 +211,7 @@ class AgentDDPG():
         if test:
             return self.Anet(observation).view(-1)
         else:
-            return self.Anet(observation).view(-1) if random.random() > self.eps else torch.rand((self.n_act,)) * 2 - 1
+            return self.Anet(observation).view(-1) if random.random() > self.eps else torch.rand((self.n_act,))
 
 
 class MA_DDPG():
