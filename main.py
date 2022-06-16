@@ -15,7 +15,7 @@ def parse():
     parser = argparse.ArgumentParser(description="SYSU_RL_HW2")
     parser.add_argument('--task', default='maddpg', type=str, choices=['maddpg'], help='whether train policy gradient')
 
-    parser.add_argument("--render", default=True, type=bool)
+    parser.add_argument("--render", default=False, type=bool)
     parser.add_argument("--snap", default=100, type=float)
     parser.add_argument("--name", default='CartPole', type=str)
     parser.add_argument("--snap_save", default=10000, type=float)
