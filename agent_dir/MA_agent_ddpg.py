@@ -165,7 +165,6 @@ class AgentDDPG():
         self.optimizer_C = torch.optim.Adam(self.Cnet.parameters(), lr=args.lr)
 
         self.args = args
-        self.writer = SummaryWriter("log")
 
         self.eps_scd = EpsScheduler(args.eps_start, args.eps_end, args.eps_decay)
         self.ema = EMA(args.ema)
