@@ -27,7 +27,7 @@ def maddpg_arguments(parser):
 
     parser.add_argument("--eps_start", default=1.0, type=float)
     parser.add_argument("--eps_end", default=0.01, type=float)
-    parser.add_argument("--eps_decay", default=60000, type=float)
+    parser.add_argument("--eps_decay", default=40000, type=float)
 
     parser.add_argument("--test", default=False, type=bool)
     parser.add_argument("--use_cuda", default=True, type=bool)

@@ -257,6 +257,7 @@ class MA_DDPG():
 
         for episode in range(n_ep):
             ep_r = 0
+            ep_r_all = np.zeros(3)
             step_inter=0
 
             state_all = self.env.reset()
@@ -278,6 +279,7 @@ class MA_DDPG():
                 done_all=torch.tensor(done_list)
 
                 ep_r += reward_all.mean()
+                ep_r_all += reward_all.numpy()
 
                 self.mem.push(*[torch.tensor(x, device='cpu') for x in [state_all.cpu(), action_all, reward_all, next_state_all, done_all]])
 
@@ -299,6 +301,7 @@ class MA_DDPG():
                 if done_all.all() or step_inter>self.args.max_step:
                     self.writer.add_scalar("ep_r", ep_r/step_inter, global_step=episode)
                     logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r/step_inter}, len_mem:{len(self.mem)}, eps:{self.agent_list[0].eps}')
+                    logger.info(f'ep_r_all:{ep_r_all/step_inter}')
                     break
 
                 state_all = torch.tensor(next_state_all, device=device)
