@@ -241,9 +241,10 @@ class MA_DDPG():
         self.mem = ReplayBuffer(args.buffer_size)
 
     def train_step(self, state_all, action_all, reward_all, next_state_all, done_all):
-        action_all_T = torch.stack([agent.Anet_T(next_state_all[:,i,:]) for i,agent in enumerate(self.agent_list)], dim=1)
+        with torch.no_grad():
+            action_all_T = torch.stack([agent.Anet_T(next_state_all[:,i,:]) for i,agent in enumerate(self.agent_list)], dim=1)
 
-        reward_all = (reward_all - reward_all.mean()) / (reward_all.std() + 1e-7)
+        reward_all = (reward_all+7)/3
 
         C_loss=0
         A_loss=0
