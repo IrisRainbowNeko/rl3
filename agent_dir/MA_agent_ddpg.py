@@ -80,9 +80,6 @@ class CriticNetwork(nn.Module):
 
             nn.Linear(1024, 512),
             nn.LeakyReLU(),
-
-            nn.Linear(512, 512),
-            nn.LeakyReLU(),
         )
 
         self.base_act = nn.Sequential(
@@ -91,15 +88,15 @@ class CriticNetwork(nn.Module):
 
             nn.Linear(1024, 512),
             nn.LeakyReLU(),
-
-            nn.Linear(512, 512),
-            nn.LeakyReLU(),
         )
 
         # self.attention = DotProductAttention(512)
 
         self.net = nn.Sequential(
             nn.Linear(1024, 512),
+            nn.LeakyReLU(),
+
+            nn.Linear(512, 512),
             nn.LeakyReLU(),
 
             nn.Linear(512, 1)
