@@ -34,7 +34,7 @@ def run(args):
         scenario = scenarios.load(env_name).Scenario()
         world = scenario.make_world()
         # create multiagent environment
-        env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation, info_callback=None,
+        env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation,
                             shared_viewer=True)
         from agent_dir.MA_agent_ddpg import MA_DDPG
         agent = eval(args.agent)(env, args)
@@ -53,10 +53,10 @@ def test(args):
     print(env.action_space[0])
     print(env.observation_space[0].high)
     print(dir(env.observation_space[0]))
-    print(state.shape)
+    print(state[0].shape)
     #print(env.observation_space)
 
-    state = env.step([np.random.rand(18)]*3)
+    state = env.step([np.random.rand(5),np.random.rand(5),np.random.rand(5)])
     print(state)
     0/0
 

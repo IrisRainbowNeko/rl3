@@ -136,7 +136,7 @@ class ReplayBuffer:
 
 
 class AgentDDPG():
-    def __init__(self, n_act, n_state, n_agent, agent_id, args):
+    def __init__(self, n_act, n_state, n_agent, args):
         """
         Initialize every things you need here.
         For example: building your model
@@ -145,7 +145,7 @@ class AgentDDPG():
         self.n_act = n_act
         self.n_state = n_state
         self.n_agent = n_agent
-        self.agent_id = agent_id
+        #self.agent_id = agent_id
 
         self.Anet = ActorNetwork(self.n_state, self.n_act).to(device)
         self.Cnet = CriticNetwork(self.n_state*self.n_agent, self.n_act*self.n_agent).to(device)
@@ -169,7 +169,7 @@ class AgentDDPG():
         self.eps_scd = EpsScheduler(args.eps_start, args.eps_end, args.eps_decay)
         self.ema = EMA(args.ema)
 
-    def train_step(self, state_all, action_all, action_all_T, reward, next_state_all, done):
+    def train_step(self, state_all, action_all, action_all_T, reward, next_state_all, done, agent_id):
         self.ema.update_model_average(self.Anet_T, self.Anet)
         self.ema.update_model_average(self.Cnet_T, self.Cnet)
 
@@ -193,7 +193,7 @@ class AgentDDPG():
         self.optimizer_C.step()
 
         # Actor
-        action_all[:,self.agent_id,:]=self.Anet(state_all[:,self.agent_id,:])
+        action_all[:,agent_id,:]=self.Anet(state_all[:,agent_id,:])
         pred = self.Cnet(state_all.flatten(1), action_all.flatten(1)).view(-1)
         A_loss = -torch.mean(pred)
 
@@ -231,7 +231,8 @@ class MA_DDPG():
         self.n_act = env.action_space[0].n
         self.n_state = env.observation_space[0].shape[0]
 
-        self.agent_list=[AgentDDPG(self.n_act, self.n_state, self.n_agent, i, args) for i in range(self.n_agent)]
+        #self.agent_list=[AgentDDPG(self.n_act, self.n_state, self.n_agent, i, args) for i in range(self.n_agent)]
+        self.agent_list=[AgentDDPG(self.n_act, self.n_state, self.n_agent, args)]*self.n_agent
 
         self.mem = ReplayBuffer(args.buffer_size)
 
@@ -241,7 +242,7 @@ class MA_DDPG():
         C_loss=0
         A_loss=0
         for i, agent in enumerate(self.agent_list):
-            C_loss_i, A_loss_i = agent.train_step(state_all, action_all, action_all_T, reward_all[:,i], next_state_all, done_all[:,i])
+            C_loss_i, A_loss_i = agent.train_step(state_all, action_all, action_all_T, reward_all[:,i], next_state_all, done_all[:,i], i)
             C_loss+=C_loss_i
             A_loss+=A_loss_i
         return C_loss/self.n_agent, A_loss/self.n_agent
