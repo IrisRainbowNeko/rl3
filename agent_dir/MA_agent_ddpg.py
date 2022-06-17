@@ -175,7 +175,6 @@ class AgentDDPG():
             self.ema.update_model_average(self.Cnet_T, self.Cnet)
 
         y = deepcopy(reward.float())
-        action_all = deepcopy(action_all)
 
         # Critic
         with torch.no_grad():
@@ -196,8 +195,9 @@ class AgentDDPG():
         # Actor
         A_loss=[]
         for i in range(self.n_agent):
-            action_all[:,i,:]=self.Anet(state_all[:,i,:])
-            pred = self.Cnet(state_all.flatten(1), action_all.flatten(1)).view(-1)
+            action_all_i = deepcopy(action_all)
+            action_all_i[:,i,:]=self.Anet(state_all[:,i,:])
+            pred = self.Cnet(state_all.flatten(1), action_all_i.flatten(1)).view(-1)
             A_loss.append(-torch.mean(pred))
         A_loss=sum(A_loss)/self.n_agent
 
