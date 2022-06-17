@@ -184,11 +184,11 @@ class AgentDDPG():
 
         # Critic
         with torch.no_grad():
-            #not_done = ~done
-            #acts = action_all_T[not_done, ...].flatten(1)
-            #y[not_done] += self.args.gamma * self.Cnet_T(next_state_all[not_done, ...].flatten(1), acts).view(-1)
-            acts = action_all_T.flatten(1)
-            y += self.args.gamma * self.Cnet_T(next_state_all.flatten(1), acts).view(-1)
+            not_done = ~done
+            acts = action_all_T[not_done, ...].flatten(1)
+            y[not_done] += self.args.gamma * self.Cnet_T(next_state_all[not_done, ...].flatten(1), acts).view(-1)
+            #acts = action_all_T.flatten(1)
+            #y += self.args.gamma * self.Cnet_T(next_state_all.flatten(1), acts).view(-1)
 
         pred = self.Cnet(state_all.flatten(1), action_all.flatten(1)).view(-1)
         loss = self.criterion(pred, y)
@@ -244,6 +244,8 @@ class MA_DDPG():
 
     def train_step(self, state_all, action_all, reward_all, next_state_all, done_all):
         action_all_T = torch.stack([agent.Anet_T(next_state_all[:,i,:]) for i,agent in enumerate(self.agent_list)], dim=1)
+
+        reward_all=(reward_all/5)+1
 
         C_loss=0
         A_loss=0
