@@ -23,7 +23,7 @@ def maddpg_arguments(parser):
     parser.add_argument("--gamma", default=0.97, type=float)
     parser.add_argument("--grad_norm_clip", default=1, type=float)
 
-    parser.add_argument("--max_step", default=300, type=int)
+    parser.add_argument("--max_step", default=25, type=int)
 
     parser.add_argument("--eps_start", default=1.0, type=float)
     parser.add_argument("--eps_end", default=0.01, type=float)
