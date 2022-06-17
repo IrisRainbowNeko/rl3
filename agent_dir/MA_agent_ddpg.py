@@ -214,8 +214,12 @@ class AgentDDPG():
         if test:
             return self.Anet(observation).view(-1)
         else:
-            return self.Anet(observation).view(-1) if random.random() > self.eps else torch.rand((self.n_act,))
-
+            if random.random() > self.eps:
+                return self.Anet(observation).view(-1)
+            else:
+                act = torch.zeros((self.n_act,))
+                act[random.randint(0, self.n_act - 1)] = 1
+                return act
 
 class MA_DDPG():
     def __init__(self, env, args):
@@ -293,7 +297,7 @@ class MA_DDPG():
                 step_inter += 1
 
                 if done_all.all() or step_inter>self.args.max_step:
-                    self.writer.add_scalar("ep_r", ep_r, global_step=episode)
+                    self.writer.add_scalar("ep_r", ep_r/step_inter, global_step=episode)
                     logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r/step_inter}, len_mem:{len(self.mem)}, eps:{self.agent_list[0].eps}')
                     break
 
