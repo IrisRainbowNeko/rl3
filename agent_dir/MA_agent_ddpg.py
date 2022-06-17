@@ -56,7 +56,7 @@ class ActorNetwork(nn.Module):
             nn.LeakyReLU(),
 
             nn.Linear(512, action_size),
-            nn.Sigmoid()
+            nn.Softmax()
         )
 
     def forward(self, inputs):
