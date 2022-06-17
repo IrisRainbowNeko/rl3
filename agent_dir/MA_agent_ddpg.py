@@ -194,9 +194,12 @@ class AgentDDPG():
         self.optimizer_C.step()
 
         # Actor
-        action_all[:,agent_id,:]=self.Anet(state_all[:,agent_id,:])
-        pred = self.Cnet(state_all.flatten(1), action_all.flatten(1)).view(-1)
-        A_loss = -torch.mean(pred)
+        A_loss=[]
+        for i in range(self.n_agent):
+            action_all[:,i,:]=self.Anet(state_all[:,i,:])
+            pred = self.Cnet(state_all.flatten(1), action_all.flatten(1)).view(-1)
+            A_loss.append(-torch.mean(pred))
+        A_loss=sum(A_loss)
 
         self.optimizer_A.zero_grad()
         A_loss.backward()
@@ -244,7 +247,7 @@ class MA_DDPG():
 
         C_loss=0
         A_loss=0
-        for i, agent in enumerate(self.agent_list):
+        for i, agent in enumerate(self.agent_list[0:1]):
             C_loss_i, A_loss_i = agent.train_step(state_all, action_all, action_all_T, reward_all[:,i], next_state_all,
                                                   done_all[:,i], i, update=(i==0))
             C_loss+=C_loss_i
