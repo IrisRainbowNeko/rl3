@@ -181,11 +181,11 @@ class AgentDDPG():
 
         # Critic
         with torch.no_grad():
-            not_done = ~done
-            acts = action_all_T[not_done, ...].flatten(1)
-            y[not_done] += self.args.gamma * self.Cnet_T(next_state_all[not_done, ...].flatten(1), acts).view(-1)
-            #acts = action_all_T.flatten(1)
-            #y += self.args.gamma * self.Cnet_T(next_state_all.flatten(1), acts).view(-1)
+            #not_done = ~done
+            #acts = action_all_T[not_done, ...].flatten(1)
+            #y[not_done] += self.args.gamma * self.Cnet_T(next_state_all[not_done, ...].flatten(1), acts).view(-1)
+            acts = action_all_T.flatten(1)
+            y += self.args.gamma * self.Cnet_T(next_state_all.flatten(1), acts).view(-1)
 
         pred = self.Cnet(state_all.flatten(1), action_all.flatten(1)).view(-1)
         loss = self.criterion(pred, y)
