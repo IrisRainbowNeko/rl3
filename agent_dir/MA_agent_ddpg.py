@@ -199,7 +199,7 @@ class AgentDDPG():
             action_all[:,i,:]=self.Anet(state_all[:,i,:])
             pred = self.Cnet(state_all.flatten(1), action_all.flatten(1)).view(-1)
             A_loss.append(-torch.mean(pred))
-        A_loss=sum(A_loss)
+        A_loss=sum(A_loss)/self.n_agent
 
         self.optimizer_A.zero_grad()
         A_loss.backward()
