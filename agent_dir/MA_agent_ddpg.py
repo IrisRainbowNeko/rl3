@@ -15,47 +15,19 @@ from loguru import logger
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
-class DotProductAttention(nn.Module):
-    def __init__(self, query_dim):
-        super().__init__()
-
-        self.scale = 1.0 / np.sqrt(query_dim)
-        self.softmax = nn.Softmax(dim=2)
-
-    def forward(self, query, keys, values):
-        # query: [B,Q] (hidden state, decoder output, etc.)
-        # keys: [B,K] (encoder outputs)
-        # values: [B,V] (encoder outputs)
-        # assume Q == K
-
-        # compute energy
-        query = query.unsqueeze(1)  # [B,Q] -> [B,1,Q]
-        keys = keys.unsqueeze(2)  # [B,K,1]
-
-        energy = torch.bmm(keys, query)  # [B,K,1]*[B,1,Q] = [B,K,Q]
-        energy = self.softmax(energy.mul_(self.scale))
-
-        # weight values
-        values = values.unsqueeze(2)  # [B,V] -> [B,V,1]
-        combo = torch.bmm(energy, values).squeeze(2)  # [B,K,Q]*[B,V,1] -> [B,V]
-
-        return combo
-
-
 class ActorNetwork(nn.Module):
     def __init__(self, state_size, action_size):
         super(ActorNetwork, self).__init__()
         self.output_size = action_size
 
         self.net = nn.Sequential(
-            nn.Linear(state_size, 512),
+            nn.Linear(state_size, 256),
             nn.LeakyReLU(),
 
-            nn.Linear(512, 512),
+            nn.Linear(256, 256),
             nn.LeakyReLU(),
 
-            nn.Linear(512, action_size),
+            nn.Linear(256, action_size),
             nn.Softmax()
         )
 
@@ -75,28 +47,25 @@ class CriticNetwork(nn.Module):
         # self.net.classifier[-1]=nn.Linear(4096, output_size)
 
         self.base_state = nn.Sequential(
-            nn.Linear(state_size, 512),
-            nn.LeakyReLU(),
-
-            nn.Linear(512, 512),
+            nn.Linear(state_size, 256),
             nn.LeakyReLU(),
         )
 
         self.base_act = nn.Sequential(
-            nn.Linear(action_size, 512),
-            nn.LeakyReLU(),
-
-            nn.Linear(512, 512),
+            nn.Linear(action_size, 256),
             nn.LeakyReLU(),
         )
 
         # self.attention = DotProductAttention(512)
 
         self.net = nn.Sequential(
-            nn.Linear(1024, 512),
+            nn.Linear(512, 256),
             nn.LeakyReLU(),
 
-            nn.Linear(512, 1)
+            nn.Linear(256, 256),
+            nn.LeakyReLU(),
+
+            nn.Linear(256, 1)
         )
 
     def forward(self, s, a):
@@ -259,7 +228,7 @@ class MA_DDPG():
         """
         Implement your training algorithm here
         """
-        n_ep = 10000
+        n_ep = self.args.n_ep
         step = 0
         loss_sum_C = 0
         loss_sum_A = 0

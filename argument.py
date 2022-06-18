@@ -16,14 +16,14 @@ def maddpg_arguments(parser):
     parser.add_argument('--agent', default="MA_DDPG", help='agent name')
 
     parser.add_argument("--seed", default=11037, type=int)
-    parser.add_argument("--buffer_size", default=int(1e5), type=int)
-    parser.add_argument("--hidden_size", default=16, type=int)
+    parser.add_argument("--buffer_size", default=int(1e6), type=int)
     parser.add_argument("--lr", default=0.0002, type=float)
-    parser.add_argument("--batch_size", default=64, type=int)
-    parser.add_argument("--gamma", default=0.95, type=float)
+    parser.add_argument("--batch_size", default=256, type=int)
+    parser.add_argument("--gamma", default=0.98, type=float)
     parser.add_argument("--grad_norm_clip", default=1, type=float)
 
     parser.add_argument("--max_step", default=25, type=int)
+    parser.add_argument("--n_ep", default=50000, type=int)
 
     parser.add_argument("--eps_start", default=1.0, type=float)
     parser.add_argument("--eps_end", default=0.01, type=float)
@@ -32,6 +32,6 @@ def maddpg_arguments(parser):
     parser.add_argument("--test", default=False, type=bool)
     parser.add_argument("--use_cuda", default=True, type=bool)
     parser.add_argument("--n_frames", default=int(30000), type=int)
-    parser.add_argument("--ema", default=0.99, type=float)
+    parser.add_argument("--ema", default=0.995, type=float)
 
     return parser
