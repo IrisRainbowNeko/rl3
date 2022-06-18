@@ -152,6 +152,7 @@ class AgentDDPG():
         y = deepcopy(reward.float())
 
         # Critic
+        self.Cnet.requires_grad_(True)
         with torch.no_grad():
             #not_done = ~done
             #acts = action_all_T[not_done, ...].flatten(1)
@@ -168,6 +169,7 @@ class AgentDDPG():
         self.optimizer_C.step()
 
         # Actor
+        self.Cnet.requires_grad_(False)
         A_loss=[]
         for i in range(self.n_agent):
             action_all_i = deepcopy(action_all)
