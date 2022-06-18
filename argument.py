@@ -19,8 +19,8 @@ def maddpg_arguments(parser):
     parser.add_argument("--buffer_size", default=int(1e6), type=int)
     parser.add_argument("--lr_c", default=0.001, type=float)
     parser.add_argument("--lr_a", default=0.0006, type=float)
-    parser.add_argument("--batch_size", default=256, type=int)
-    parser.add_argument("--gamma", default=0.98, type=float)
+    parser.add_argument("--batch_size", default=512, type=int)
+    parser.add_argument("--gamma", default=0.95, type=float)
     parser.add_argument("--grad_norm_clip", default=1, type=float)
 
     parser.add_argument("--max_step", default=25, type=int)
@@ -28,7 +28,7 @@ def maddpg_arguments(parser):
 
     parser.add_argument("--eps_start", default=1.0, type=float)
     parser.add_argument("--eps_end", default=0.01, type=float)
-    parser.add_argument("--eps_decay", default=40000, type=float)
+    parser.add_argument("--eps_decay", default=100000, type=float)
 
     parser.add_argument("--test", default=False, type=bool)
     parser.add_argument("--use_cuda", default=True, type=bool)

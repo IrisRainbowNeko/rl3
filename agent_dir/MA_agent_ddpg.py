@@ -22,9 +22,11 @@ class ActorNetwork(nn.Module):
 
         self.net = nn.Sequential(
             nn.Linear(state_size, 256),
+            nn.LayerNorm(256),
             nn.LeakyReLU(),
 
             nn.Linear(256, 256),
+            nn.LayerNorm(256),
             nn.LeakyReLU(),
 
             nn.Linear(256, action_size),
@@ -48,11 +50,13 @@ class CriticNetwork(nn.Module):
 
         self.base_state = nn.Sequential(
             nn.Linear(state_size, 256),
+            nn.LayerNorm(256),
             nn.LeakyReLU(),
         )
 
         self.base_act = nn.Sequential(
             nn.Linear(action_size, 256),
+            nn.LayerNorm(256),
             nn.LeakyReLU(),
         )
 
@@ -60,9 +64,11 @@ class CriticNetwork(nn.Module):
 
         self.net = nn.Sequential(
             nn.Linear(512, 256),
+            nn.LayerNorm(256),
             nn.LeakyReLU(),
 
             nn.Linear(256, 256),
+            nn.LayerNorm(256),
             nn.LeakyReLU(),
 
             nn.Linear(256, 1)
@@ -213,7 +219,7 @@ class MA_DDPG():
         with torch.no_grad():
             action_all_T = torch.stack([agent.Anet_T(next_state_all[:,i,:]) for i,agent in enumerate(self.agent_list)], dim=1)
 
-        reward_all = (reward_all+7)/3
+        reward_all = (reward_all+7)/10
 
         C_loss=0
         A_loss=0
