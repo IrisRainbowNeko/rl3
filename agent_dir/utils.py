@@ -1,5 +1,5 @@
 import math
-
+import torch
 
 class EpsScheduler:
     def __init__(self, eps_start, eps_end, eps_decay):
@@ -28,3 +28,9 @@ class EMA():
         if old is None:
             return new
         return old * self.beta + (1 - self.beta) * new
+
+
+def to_onehot(data):
+    result = torch.zeros_like(data)
+    result[data.argmax()]=1.
+    return result

@@ -257,7 +257,7 @@ class MA_DDPG():
                 for agent in self.agent_list:
                     agent.eps=agent.eps_scd.step()
 
-                next_state_list, reward_list, done_list, info = self.env.step([x.view(-1).numpy() for x in action_list])
+                next_state_list, reward_list, done_list, info = self.env.step([to_onehot(x.view(-1)).numpy() for x in action_list])
                 next_state_all=torch.tensor(next_state_list)
                 reward_all=torch.tensor(reward_list)
                 done_all=torch.tensor(done_list)
