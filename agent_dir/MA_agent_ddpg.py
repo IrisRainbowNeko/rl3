@@ -144,11 +144,11 @@ class AgentDDPG():
         self.eps_scd = EpsScheduler(args.eps_start, args.eps_end, args.eps_decay)
         self.ema = EMA(args.ema)
 
-    def train_step(self, state_all, action_all, action_all_T, reward, next_state_all, done, agent_id, update=False):
-        if update:
-            self.ema.update_model_average(self.Anet_T, self.Anet)
-            self.ema.update_model_average(self.Cnet_T, self.Cnet)
+    def soft_update(self):
+        self.ema.update_model_average(self.Anet_T, self.Anet)
+        self.ema.update_model_average(self.Cnet_T, self.Cnet)
 
+    def train_step(self, state_all, action_all, action_all_T, reward, next_state_all, done, agent_id, update=False):
         y = deepcopy(reward.float())
 
         # Critic
@@ -218,6 +218,7 @@ class MA_DDPG():
         self.mem = ReplayBuffer(args.buffer_size)
 
     def train_step(self, state_all, action_all, reward_all, next_state_all, done_all):
+        self.agent_list[0].soft_update()
         with torch.no_grad():
             action_all_T = torch.stack([agent.Anet_T(next_state_all[:,i,:]) for i,agent in enumerate(self.agent_list)], dim=1)
 
