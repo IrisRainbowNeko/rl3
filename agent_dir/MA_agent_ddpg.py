@@ -15,48 +15,19 @@ from loguru import logger
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class ResBlock(nn.Module):
-    def __init__(self, in_ch, out_ch):
-        super().__init__()
-        self.block = nn.Sequential(
-            nn.LayerNorm(in_ch),
-            nn.LeakyReLU(),
-            nn.Linear(in_ch, 256),
-
-            nn.LayerNorm(256),
-            nn.LeakyReLU(),
-            nn.Linear(256, out_ch),
-        )
-
-    def forward(self, x):
-        return x + self.block(x)
-
 class ActorNetwork(nn.Module):
     def __init__(self, state_size, action_size):
         super(ActorNetwork, self).__init__()
         self.output_size = action_size
 
-        '''self.net = nn.Sequential(
+        self.net = nn.Sequential(
             nn.Linear(state_size, 256),
             nn.LayerNorm(256),
-            nn.LeakyReLU(),
+            nn.SiLU(),
 
             nn.Linear(256, 256),
             nn.LayerNorm(256),
-            nn.LeakyReLU(),
-
-            nn.Linear(256, action_size),
-            nn.Softmax()
-        )'''
-        self.net = nn.Sequential(
-            nn.Linear(state_size, 256),
-
-            ResBlock(256,256),
-            ResBlock(256,256),
-            ResBlock(256,256),
-            ResBlock(256,256),
-            nn.LayerNorm(256),
-            nn.LeakyReLU(),
+            nn.SiLU(),
 
             nn.Linear(256, action_size),
             nn.Softmax()
@@ -79,39 +50,27 @@ class CriticNetwork(nn.Module):
         self.base_state = nn.Sequential(
             nn.Linear(state_size, 256),
             nn.LayerNorm(256),
-            nn.LeakyReLU(),
+            nn.SiLU(),
         )
 
         self.base_act = nn.Sequential(
             nn.Linear(action_size, 256),
             nn.LayerNorm(256),
-            nn.LeakyReLU(),
+            nn.SiLU(),
         )
 
         # self.attention = DotProductAttention(512)
 
-        '''self.net = nn.Sequential(
+        self.net = nn.Sequential(
             nn.Linear(512, 256),
             nn.LayerNorm(256),
-            nn.LeakyReLU(),
+            nn.SiLU(),
 
             nn.Linear(256, 256),
             nn.LayerNorm(256),
-            nn.LeakyReLU(),
+            nn.SiLU(),
 
             nn.Linear(256, 1)
-        )'''
-        self.net = nn.Sequential(
-            nn.Linear(512, 256),
-
-            ResBlock(256, 256),
-            ResBlock(256, 256),
-            ResBlock(256, 256),
-            ResBlock(256, 256),
-            nn.LayerNorm(256),
-            nn.LeakyReLU(),
-
-            nn.Linear(256, 1),
         )
 
     def forward(self, s, a):

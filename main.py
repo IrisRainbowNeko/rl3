@@ -11,34 +11,34 @@ from multiagent.environment import MultiAgentEnv
 from multiagent.policy import InteractivePolicy
 import multiagent.scenarios as scenarios
 
+from agent_dir.MA_agent_ddpg import MA_DDPG
+from agent_dir.MA_agent_VDN import MA_VDN
+
 def parse():
     parser = argparse.ArgumentParser(description="SYSU_RL_HW2")
-    parser.add_argument('--task', default='maddpg', type=str, choices=['maddpg'], help='whether train policy gradient')
+    parser.add_argument('--task', default='vdn', type=str, choices=['maddpg', 'vdn'], help='whether train policy gradient')
 
     parser.add_argument("--render", default=False, type=bool)
-    parser.add_argument("--snap", default=100, type=float)
+    parser.add_argument("--snap", default=1, type=float)
     parser.add_argument("--name", default='CartPole', type=str)
     parser.add_argument("--snap_save", default=10000, type=float)
     parser.add_argument("--save_dir", default='output', type=str)
 
-    #parser = dqn_arguments(parser)
-    #parser = pg_arguments(parser)
-    parser = maddpg_arguments(parser)
+    parser = VDN_arguments(parser)
+    #parser = maddpg_arguments(parser)
     args = parser.parse_args()
     return args
 
 
 def run(args):
-    if args.task=='maddpg':
-        env_name = args.env_name
-        scenario = scenarios.load(env_name).Scenario()
-        world = scenario.make_world()
-        # create multiagent environment
-        env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation,
-                            shared_viewer=True)
-        from agent_dir.MA_agent_ddpg import MA_DDPG
-        agent = eval(args.agent)(env, args)
-        agent.run()
+    env_name = args.env_name
+    scenario = scenarios.load(env_name).Scenario()
+    world = scenario.make_world()
+    # create multiagent environment
+    env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation,
+                        shared_viewer=True)
+    agent = eval(args.agent)(env, args)
+    agent.run()
 
 def test(args):
     env_name = args.env_name
