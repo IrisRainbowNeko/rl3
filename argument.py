@@ -50,7 +50,7 @@ def VDN_arguments(parser):
     #parser.add_argument('--env_name', default="LunarLanderContinuous-v2", help='environment name')
     parser.add_argument('--env_name', default="simple_spread.py", help='environment name')
 
-    parser.add_argument('--agent', default="MA_DDPG", help='agent name')
+    parser.add_argument('--agent', default="MA_VDN", help='agent name')
 
     parser.add_argument("--seed", default=11037, type=int)
     parser.add_argument("--buffer_size", default=int(1e6), type=int)
