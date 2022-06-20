@@ -45,7 +45,11 @@ class PositionalEncoding(nn.Module):
     def forward(self, x):
         return x + self.pe[:x.size(0), :]
 
-def to_onehot(data):
-    result = torch.zeros_like(data)
-    result[data.argmax()]=1.
+def to_onehot(data, n=None):
+    if n is None:
+        result = torch.zeros_like(data)
+        result[data.argmax()]=1.
+    else:
+        result = torch.zeros((n,))
+        result[data] = 1.
     return result

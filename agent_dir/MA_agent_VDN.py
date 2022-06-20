@@ -26,10 +26,10 @@ class QNetwork(nn.Module):
             nn.SiLU(),
         )
 
-        self.lstm=nn.Sequential(
-            nn.LSTM(input_size=512, hidden_size=512, num_layers=1, batch_first=True),
+        self.lstm=nn.LSTM(input_size=512, hidden_size=512, num_layers=1, batch_first=True)
 
-            nn.Linear(state_size, 512),
+        self.lstm_l = nn.Sequential(
+            nn.Linear(512, 512),
             nn.LayerNorm(512),
             nn.SiLU(),
         )
@@ -48,8 +48,9 @@ class QNetwork(nn.Module):
         )
 
     def step1(self, x):
-        x=self.net(x)
-        x=self.lstm(x)
+        x=self.base(x)
+        x,(h,c)=self.lstm(x)
+        x=self.lstm_l(x)
         return x
 
     def step2(self, x_all):
@@ -162,17 +163,17 @@ class AgentVDN():
 
         return loss.item()
 
-    @torch.no_grad()
-    def make_action(self, observation, test=True):
+    #@torch.no_grad()
+    def make_action(self, out_all, test=True):
         """
         Return predicted action of your agent
         Input:observation
         Return:action
         """
         if test:
-            return self.Qnet(observation).argmax(dim=-1)
+            return self.Qnet.step2(out_all).argmax(dim=-1)
         else:
-            return self.Qnet(observation).argmax(dim=-1) if random.random() > self.eps else torch.randint(0, self.n_act, (1,))
+            return self.Qnet.step2(out_all).argmax(dim=-1) if random.random() > self.eps else torch.randint(0, self.n_act, (1,))
 
 class MA_VDN():
     def __init__(self, env, args):
@@ -209,6 +210,12 @@ class MA_VDN():
             loss+=loss_i
         return loss/self.n_agent
 
+    @torch.no_grad()
+    def make_action_all(self, state_all):
+        out_all=[agent.Qnet.step1(state_all[:,i,:].unsqueeze(0)) for i,agent in enumerate(self.agent_list)]
+        out_all = torch.cat(out_all, dim=-1)
+        return [agent.make_action(out_all).view(-1)[-1] for i,agent in enumerate(self.agent_list)]
+
     def train(self):
         """
         Implement your training algorithm here
@@ -222,6 +229,8 @@ class MA_VDN():
             ep_r_all = np.zeros(3)
             step_inter=0
 
+            state_list=[]
+
             state_all = self.env.reset()
             state_all = torch.tensor(state_all, device=device)
 
@@ -229,13 +238,16 @@ class MA_VDN():
                 if self.args.render:
                     self.env.render(mode=None)
 
-                action_list = [agent.make_action(state_all[i].unsqueeze(0).float(), self.args.test).detach().cpu() for i,agent in enumerate(self.agent_list)]
+                state_list.append(state_all.float())
+
+                #action_list = [agent.make_action(state_all[i].unsqueeze(0).float(), self.args.test).detach().cpu() for i,agent in enumerate(self.agent_list)]
+                action_list = self.make_action_all(torch.stack(state_list, dim=0))
                 action_all = torch.tensor(action_list)
 
                 for agent in self.agent_list:
                     agent.eps_update()
 
-                next_state_list, reward_list, done_list, info = self.env.step([to_onehot(x.view(-1)).numpy() for x in action_list])
+                next_state_list, reward_list, done_list, info = self.env.step([to_onehot(x.view(-1), n=self.n_act).numpy() for x in action_list])
                 next_state_all=torch.tensor(next_state_list)
                 reward_all=torch.tensor(reward_list)
                 done_all=torch.tensor(done_list)
