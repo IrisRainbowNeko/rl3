@@ -1,6 +1,7 @@
 def str2list(v):
     return [float(x) for x in v.split(',')]
 
+# python main.py --render True --batch_size 256 --lr_a 0.0008 --eps_decay 100000 --ema 0.99
 def maddpg_arguments(parser):
     """
     Add your arguments here if needed. The TAs will run test.py to load
@@ -18,8 +19,8 @@ def maddpg_arguments(parser):
     parser.add_argument("--seed", default=11037, type=int)
     parser.add_argument("--buffer_size", default=int(1e6), type=int)
     parser.add_argument("--lr_c", default=0.001, type=float)
-    parser.add_argument("--lr_a", default=0.001, type=float)
-    parser.add_argument("--batch_size", default=1024, type=int)
+    parser.add_argument("--lr_a", default=0.0008, type=float)
+    parser.add_argument("--batch_size", default=256, type=int)
     parser.add_argument("--gamma", default=0.95, type=float)
     parser.add_argument("--grad_norm_clip", default=1, type=float)
 
@@ -54,7 +55,7 @@ def VDN_arguments(parser):
     parser.add_argument("--seed", default=11037, type=int)
     parser.add_argument("--buffer_size", default=int(1e6), type=int)
     parser.add_argument("--lr", default=0.001, type=float)
-    parser.add_argument("--batch_size", default=1024, type=int)
+    parser.add_argument("--batch_size", default=256, type=int)
     parser.add_argument("--gamma", default=0.95, type=float)
     parser.add_argument("--grad_norm_clip", default=1, type=float)
 
