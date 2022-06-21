@@ -48,6 +48,8 @@ class QNetwork(nn.Module):
         )
 
     def step1(self, x):
+        self.lstm.flatten_parameters()
+
         x=self.base(x)
         x,(h,c)=self.lstm(x)
         x=self.lstm_l(x)
@@ -148,20 +150,32 @@ class AgentVDN():
         out = self.Qnet.step1(state)
         return out, out_T
 
-    def train_step_after(self, out, out_T, action, reward):
+    def train_step_Q(self, out, out_T, action):
+        Qi = self.Qnet.step2(out).gather(2, action.unsqueeze(-1).long()).squeeze(-1)
+        with torch.no_grad():
+            Qi_T = self.Qnet_T.step2(out_T)
+        return Qi, Qi_T
+
+    def train_step_after(self, Q_sum, Q_T_sum, reward): # [B,step_ep,N]
         y = deepcopy(reward.float())
         with torch.no_grad():
-            y += self.args.gamma * self.Qnet_T.step2(out_T).max(dim=-1)[0]
+            y += self.args.gamma * Q_T_sum #self.Qnet_T.step2(out_T).max(dim=-1)[0]
 
-        pred = self.Qnet.step2(out).gather(1, action).view(-1)
-        loss = self.criterion(pred, y)
+        loss = self.criterion(Q_sum, y)
+        return loss
 
+        #self.optimizer.zero_grad()
+        #loss.backward(retain_graph=True)
+        #torch.nn.utils.clip_grad_norm_(parameters=self.Qnet.parameters(), max_norm=self.args.grad_norm_clip)
+        #self.optimizer.step()
+
+        #return loss.item()
+
+    def train_step_backward(self, loss):
         self.optimizer.zero_grad()
-        loss.backward()
+        loss.backward(retain_graph=True)
         torch.nn.utils.clip_grad_norm_(parameters=self.Qnet.parameters(), max_norm=self.args.grad_norm_clip)
         self.optimizer.step()
-
-        return loss.item()
 
     #@torch.no_grad()
     def make_action(self, out_all, test=True):
@@ -194,7 +208,6 @@ class MA_VDN():
 
         reward_all = (reward_all+7)/10
 
-        loss=0
         out_all=[]
         out_T_all=[]
         for i, agent in enumerate(self.agent_list):
@@ -202,13 +215,28 @@ class MA_VDN():
             out_all.append(out)
             out_T_all.append(out_T)
 
-        out_all=torch.cat(out_all, dim=-1)
-        out_T_all=torch.cat(out_T_all, dim=-1)
+        out_all_cat=torch.cat(out_all, dim=-1)
+        out_T_all_cat=torch.cat(out_T_all, dim=-1)
 
+        Q_all = []
+        QT_all = []
         for i, agent in enumerate(self.agent_list):
-            loss_i = agent.train_step_after(out_all, out_T_all, action_all[:,:,i], reward_all[:,:,i])
-            loss+=loss_i
-        return loss/self.n_agent
+            Qi, Qi_T = agent.train_step_Q(out_all_cat, out_T_all_cat, action_all[:,:,i])
+            Q_all.append(Qi)
+            QT_all.append(Qi_T)
+
+        Q_sum=sum(Q_all)
+        QT_sum=sum(QT_all).max(dim=-1)[0]
+
+        loss=[]
+        for i, agent in enumerate(self.agent_list):
+            loss_i = agent.train_step_after(Q_sum, QT_sum, reward_all[:,:,i])
+            loss.append(loss_i)
+
+        loss=sum(loss)
+        self.agent_list[0].train_step_backward(loss)
+
+        return loss.item()/self.n_agent
 
     @torch.no_grad()
     def make_action_all(self, state_all):
@@ -280,6 +308,7 @@ class MA_VDN():
                     logger.info(f'[{episode}/{n_ep}] <{step}> loss:{loss_sum / self.args.snap}, eps:{self.agent_list[0].eps}')
                     loss_sum = 0
 
+    @logger.catch
     def run(self):
         """
         Implement the interaction between agent and environment here
