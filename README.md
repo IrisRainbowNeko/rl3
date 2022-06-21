@@ -1,4 +1,4 @@
-# SYSU RL Homework 2
+# SYSU RL Homework 3
 
 ## Installation
 You need to  install OpenAI `Gym` 、OpenAI `Gym Atari` 、`Gym Box2D` environment.
@@ -6,19 +6,5 @@ You need to  install OpenAI `Gym` 、OpenAI `Gym Atari` 、`Gym Box2D` environme
 Please refer to [OpenAI's page](https://github.com/openai/gym) if you have any problem while installing.
 
 ## How to run:
-training policy gradient:
-* `python main.py --train_pg`
+* `python main.py --task qmix`
 
-training DQN:
-* `python main.py --train_dqn`
-
-## How to evaluate performance your algorithm:
-PS: You need to load model which has best performance before testing the algorithm
-
-testing policy gradient:
-
-* `python test.py --test_pg`
-  
-
-testing DQN:
-* `python test.py --test_dqn`
