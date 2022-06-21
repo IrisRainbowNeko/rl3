@@ -232,9 +232,8 @@ class MA_QMIX():
 
         Q_all=torch.stack(Q_all, dim=2)
         QT_all=torch.stack(QT_all, dim=2)
-        print(Q_all.shape)
-        Q_mix=self.mix_net(Q_all, state_all)
-        QT_mix=self.mix_net(QT_all, next_state_all).max(dim=-1)[0]
+        Q_mix=self.mix_net(Q_all, state_all.flatten(2))
+        QT_mix=self.mix_net(QT_all, next_state_all.flatten(2)).max(dim=-1)[0]
 
         loss=[]
         for i, agent in enumerate(self.agent_list):
@@ -248,7 +247,7 @@ class MA_QMIX():
 
     @torch.no_grad()
     def make_action_all(self, state_all):
-        return [agent.make_action(state_all[:,i,:].unsqueeze(0)).view(-1)[-1] for i,agent in enumerate(self.agent_list)]
+        return [agent.make_action(state_all[:,i,:].unsqueeze(0), self.args.test).view(-1)[-1] for i,agent in enumerate(self.agent_list)]
 
     def train(self):
         """

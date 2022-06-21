@@ -249,7 +249,7 @@ class MA_VDN():
 
     @torch.no_grad()
     def make_action_all(self, state_all):
-        return [agent.make_action(state_all[:,i,:].unsqueeze(0)).view(-1)[-1] for i,agent in enumerate(self.agent_list)]
+        return [agent.make_action(state_all[:,i,:].unsqueeze(0), self.args.test).view(-1)[-1] for i,agent in enumerate(self.agent_list)]
 
     def train(self):
         """
