@@ -34,7 +34,7 @@ class QNet(nn.Module):
             nn.SiLU(),
         )
 
-        self.lstm = nn.LSTM(input_size=512, hidden_size=512, num_layers=1, batch_first=True)
+        self.lstm = nn.LSTM(input_size=512, hidden_size=512, num_layers=2, batch_first=True)
 
         self.head_V = nn.Sequential(
             nn.Linear(512, 512),
@@ -81,7 +81,12 @@ class MIXNet(nn.Module):
             nn.Linear(1024, self.mixing_hidden_size)
         )
 
-        self.hyper_b1 = nn.Linear(self.state_dim, self.mixing_hidden_size)
+        self.hyper_b1 = nn.Sequential(
+            nn.Linear(self.state_dim, self.mixing_hidden_size),
+            nn.LayerNorm(self.mixing_hidden_size),
+            nn.SiLU(),
+            nn.Linear(self.mixing_hidden_size, self.mixing_hidden_size)
+        )
         self.hyper_b2 = nn.Sequential(
             nn.Linear(self.state_dim, self.mixing_hidden_size),
             nn.LayerNorm(self.mixing_hidden_size),
