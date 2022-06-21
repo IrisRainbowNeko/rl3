@@ -242,10 +242,10 @@ class MA_VDN():
             loss_i = agent.train_step_after(Q_sum, QT_sum, reward_all[:,:,i])
             loss.append(loss_i)
 
-        loss=sum(loss)
+        loss=sum(loss)/self.n_agent
         self.agent_list[0].train_step_backward(loss)
 
-        return loss.item()/self.n_agent
+        return loss.item()
 
     @torch.no_grad()
     def make_action_all(self, state_all):
