@@ -13,10 +13,11 @@ import multiagent.scenarios as scenarios
 
 from agent_dir.MA_agent_ddpg import MA_DDPG
 from agent_dir.MA_agent_VDN import MA_VDN
+from agent_dir.MA_agent_QMIX import MA_QMIX
 
 def parse():
     parser = argparse.ArgumentParser(description="SYSU_RL_HW2")
-    parser.add_argument('--task', default='vdn', type=str, choices=['maddpg', 'vdn'], help='whether train policy gradient')
+    parser.add_argument('--task', default='qmix', type=str, choices=['maddpg', 'vdn', 'qmix'], help='whether train policy gradient')
 
     parser.add_argument("--render", default=False, type=bool)
     parser.add_argument("--snap", default=10, type=float)
@@ -24,8 +25,9 @@ def parse():
     parser.add_argument("--snap_save", default=10000, type=float)
     parser.add_argument("--save_dir", default='output', type=str)
 
-    parser = VDN_arguments(parser)
     #parser = maddpg_arguments(parser)
+    parser = VDN_arguments(parser)
+    #parser = QMIX_arguments(parser)
     args = parser.parse_args()
     return args
 

@@ -185,7 +185,7 @@ class AgentDDPG():
         return loss.item(), A_loss.item()
 
     @torch.no_grad()
-    def make_action(self, observation, test=True):
+    def make_action(self, observation, test=False):
         """
         Return predicted action of your agent
         Input:observation

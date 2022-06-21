@@ -15,11 +15,15 @@ from loguru import logger
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class QNetwork(nn.Module):
-    def __init__(self, state_size, action_size, n_agent):
-        super(QNetwork, self).__init__()
-        self.output_size = action_size
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
+
+class QNet(nn.Module):
+
+    def __init__(self, state_size, action_size):
+        super(QNet, self).__init__()
         self.base = nn.Sequential(
             nn.Linear(state_size, 512),
             nn.LayerNorm(512),
@@ -30,35 +34,76 @@ class QNetwork(nn.Module):
             nn.SiLU(),
         )
 
-        self.lstm=nn.LSTM(input_size=512, hidden_size=512, num_layers=1, batch_first=True)
+        self.lstm = nn.LSTM(input_size=512, hidden_size=512, num_layers=1, batch_first=True)
 
-        self.head_V=nn.Sequential(
+        self.head_V = nn.Sequential(
             nn.Linear(512, 512),
             nn.LayerNorm(512),
             nn.SiLU(),
             nn.Linear(512, 1),
         )
-        self.head_Adv=nn.Sequential(
+        self.head_Adv = nn.Sequential(
             nn.Linear(512, 512),
             nn.LayerNorm(512),
             nn.SiLU(),
             nn.Linear(512, action_size),
         )
 
-    def step1(self, x):
+    def forward(self, x):
         self.lstm.flatten_parameters()
 
-        x=self.base(x)
-        x,(h,c)=self.lstm(x)
-        return x
+        x = self.base(x)
+        x, (h, c) = self.lstm(x)
 
-    def step2(self, x_all):
-        advantage = self.head_Adv(x_all)
-        value = self.head_V(x_all)
+        advantage = self.head_Adv(x)
+        value = self.head_V(x)
         return value + advantage - advantage.mean()
 
-    def forward(self, x):
-        return self.step2(self.step1(x))
+class MIXNet(nn.Module):
+    def __init__(self, n_agent, state_dim):
+        super(MIXNet, self).__init__()
+
+        self.n_agent = n_agent
+        self.state_dim = state_dim
+        self.mixing_hidden_size = 512
+
+        # Used to generate mixing network
+        self.hyper_w1 = nn.Sequential(
+            nn.Linear(self.state_dim, 1024),
+            nn.SiLU(),
+            nn.Linear(1024, self.n_agent * self.mixing_hidden_size)
+        )
+        self.hyper_w2 = nn.Sequential(
+            nn.Linear(self.state_dim, 1024),
+            nn.SiLU(),
+            nn.Linear(1024, self.mixing_hidden_size)
+        )
+
+        self.hyper_b1 = nn.Linear(self.state_dim, self.mixing_hidden_size)
+        self.hyper_b2 = nn.Sequential(
+            nn.Linear(self.state_dim, self.mixing_hidden_size),
+            nn.SiLU(),
+            nn.Linear(self.mixing_hidden_size, 1)
+        )
+
+    def forward(self, q_all, s_global):
+        B, ep_len=q_all.shape[:2]
+
+        w1 = torch.abs(self.hyper_w1(s_global))  # (batch_size, max_episode_len, N * qmix_hidden_dim)
+        b1 = self.hyper_b1(s_global)  # (batch_size, max_episode_len, qmix_hidden_dim)
+        w1 = w1.view(B, ep_len, self.n_agent, self.mixing_hidden_size)  # (batch_size, max_episode_len, N,  qmix_hidden_dim)
+        b1 = b1.view(B, ep_len, 1, self.mixing_hidden_size)  # (batch_size, max_episode_len, 1, qmix_hidden_dim)
+
+        q_hidden = F.elu(q_all @ w1 + b1)  # (batch_size, max_episode_len, 1, qmix_hidden_dim)
+
+        w2 = torch.abs(self.hyper_w2(s_global))  # (batch_size, max_episode_len, qmix_hidden_dim)
+        b2 = self.hyper_b2(s_global)  # (batch_size, max_episode_len,1)
+        w2 = w2.view(B, ep_len, self.mixing_hidden_size, 1)  # (batch_size, max_episode_len, qmix_hidden_dim, 1)
+        b2 = b2.view(B, ep_len, 1, 1)  # (batch_size, max_episode_len, 1， 1)
+
+        q_total = torch.bmm(q_hidden, w2) + b2  # (batch_size, max_episode_len, 1， 1)
+        #q_total = q_total.view(batch_size, -1)  # (batch_size, max_episode_len, 1)
+        return q_total
 
 class ReplayBuffer:
     def __init__(self, buffer_size):
@@ -92,7 +137,7 @@ class ReplayBuffer:
         self.buffer_eps.clear()
 
 
-class AgentVDN():
+class AgentQMIX():
     def __init__(self, n_act, n_state, n_agent, args):
         """
         Initialize every things you need here.
@@ -103,7 +148,7 @@ class AgentVDN():
         self.n_state = n_state
         self.n_agent = n_agent
 
-        self.Qnet = QNetwork(self.n_state, self.n_act, self.n_agent).to(device)
+        self.Qnet = QNet(self.n_state, self.n_act).to(device)
 
         self.Qnet_T = deepcopy(self.Qnet).to(device)
         for m in self.Qnet_T.parameters():
@@ -125,51 +170,19 @@ class AgentVDN():
     def eps_update(self):
         self.eps = self.eps_scd.step()
 
-    '''def train_step_pre(self, state, action, reward, next_state, done): #[B,step_ep,N]
-        y = deepcopy(reward.float())
-
+    def train_step_Q(self, state, next_state, action):# [B,step_ep,N]
+        Qi = self.Qnet(state).gather(2, action.unsqueeze(-1).long()).squeeze(-1)
         with torch.no_grad():
-            not_done = ~done
-            y[not_done] += self.args.gamma * self.Qnet_T(next_state[not_done, ...]).max(dim=-1)[0]
-
-        pred = self.Qnet(state, action).view(-1)
-        loss = self.criterion(pred, y)
-
-        self.optimizer.zero_grad()
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(parameters=self.Qnet.parameters(), max_norm=self.args.grad_norm_clip)
-        self.optimizer.step()
-
-        return loss.item()'''
-
-    def train_step_pre(self, state, next_state):  # [B,step_ep,N]
-
-        with torch.no_grad():
-            out_T = self.Qnet_T.step1(next_state)
-
-        out = self.Qnet.step1(state)
-        return out, out_T
-
-    def train_step_Q(self, out, out_T, action):
-        Qi = self.Qnet.step2(out).gather(2, action.unsqueeze(-1).long()).squeeze(-1)
-        with torch.no_grad():
-            Qi_T = self.Qnet_T.step2(out_T)
+            Qi_T = self.Qnet_T(next_state)
         return Qi, Qi_T
 
-    def train_step_after(self, Q_sum, Q_T_sum, reward): # [B,step_ep,N]
+    def train_step_after(self, Q_mix, Q_T_mix, reward): # [B,step_ep,N]
         y = deepcopy(reward.float())
         with torch.no_grad():
-            y += self.args.gamma * Q_T_sum #self.Qnet_T.step2(out_T).max(dim=-1)[0]
+            y += self.args.gamma * Q_T_mix
 
-        loss = self.criterion(Q_sum, y)
+        loss = self.criterion(Q_mix, y)
         return loss
-
-        #self.optimizer.zero_grad()
-        #loss.backward(retain_graph=True)
-        #torch.nn.utils.clip_grad_norm_(parameters=self.Qnet.parameters(), max_norm=self.args.grad_norm_clip)
-        #self.optimizer.step()
-
-        #return loss.item()
 
     def train_step_backward(self, loss):
         self.optimizer.zero_grad()
@@ -189,7 +202,7 @@ class AgentVDN():
         else:
             return self.Qnet(state).argmax(dim=-1) if random.random() > self.eps else torch.randint(0, self.n_act, (1,))
 
-class MA_VDN():
+class MA_QMIX():
     def __init__(self, env, args):
         self.env=env
         self.args=args
@@ -199,7 +212,9 @@ class MA_VDN():
         self.n_act = env.action_space[0].n
         self.n_state = env.observation_space[0].shape[0]
 
-        self.agent_list=[AgentVDN(self.n_act, self.n_state, self.n_agent, args)]*self.n_agent
+        self.mix_net = MIXNet(self.n_agent, self.n_state*self.n_agent).to(device)
+
+        self.agent_list=[AgentQMIX(self.n_act, self.n_state, self.n_agent, args)]*self.n_agent
 
         self.mem = ReplayBuffer(args.buffer_size)
 
@@ -208,38 +223,22 @@ class MA_VDN():
 
         reward_all = (reward_all+7)/10
 
-        '''out_all=[]
-        out_T_all=[]
-        for i, agent in enumerate(self.agent_list):
-            out, out_T = agent.train_step_pre(state_all[:,:,i,:], next_state_all[:,:,i,:])
-            out_all.append(out)
-            out_T_all.append(out_T)
-
-        out_all_cat=torch.cat(out_all, dim=-1)
-        out_T_all_cat=torch.cat(out_T_all, dim=-1)
-
         Q_all = []
         QT_all = []
         for i, agent in enumerate(self.agent_list):
-            Qi, Qi_T = agent.train_step_Q(out_all_cat, out_T_all_cat, action_all[:,:,i])
-            Q_all.append(Qi)
-            QT_all.append(Qi_T)'''
-
-        Q_all = []
-        QT_all = []
-        for i, agent in enumerate(self.agent_list):
-            out, out_T = agent.train_step_pre(state_all[:, :, i, :], next_state_all[:, :, i, :])
-            Qi, Qi_T = agent.train_step_Q(out, out_T, action_all[:, :, i])
+            Qi, Qi_T = agent.train_step_Q(state_all[:, :, i, :], next_state_all[:, :, i, :], action_all[:, :, i])
             Q_all.append(Qi)
             QT_all.append(Qi_T)
 
-
-        Q_sum=sum(Q_all)
-        QT_sum=sum(QT_all).max(dim=-1)[0]
+        Q_all=torch.stack(Q_all, dim=2)
+        QT_all=torch.stack(QT_all, dim=2)
+        print(Q_all.shape)
+        Q_mix=self.mix_net(Q_all, state_all)
+        QT_mix=self.mix_net(QT_all, next_state_all).max(dim=-1)[0]
 
         loss=[]
         for i, agent in enumerate(self.agent_list):
-            loss_i = agent.train_step_after(Q_sum, QT_sum, reward_all[:,:,i])
+            loss_i = agent.train_step_after(Q_mix, QT_mix, reward_all[:,:,i])
             loss.append(loss_i)
 
         loss=sum(loss)/self.n_agent
