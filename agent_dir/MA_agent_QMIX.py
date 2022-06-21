@@ -88,6 +88,7 @@ class MIXNet(nn.Module):
 
     def forward(self, q_all, s_global):
         B, ep_len=q_all.shape[:2]
+        q_all=q_all.unsqueeze(2)
 
         w1 = torch.abs(self.hyper_w1(s_global))  # (batch_size, max_episode_len, N * qmix_hidden_dim)
         b1 = self.hyper_b1(s_global)  # (batch_size, max_episode_len, qmix_hidden_dim)
@@ -101,8 +102,8 @@ class MIXNet(nn.Module):
         w2 = w2.view(B, ep_len, self.mixing_hidden_size, 1)  # (batch_size, max_episode_len, qmix_hidden_dim, 1)
         b2 = b2.view(B, ep_len, 1, 1)  # (batch_size, max_episode_len, 1， 1)
 
-        q_total = torch.bmm(q_hidden, w2) + b2  # (batch_size, max_episode_len, 1， 1)
-        #q_total = q_total.view(batch_size, -1)  # (batch_size, max_episode_len, 1)
+        q_total = q_hidden @ w2 + b2  # (batch_size, max_episode_len, 1， 1)
+        q_total = q_total.view(B, -1)  # (batch_size, max_episode_len)
         return q_total
 
 class ReplayBuffer:
@@ -173,7 +174,7 @@ class AgentQMIX():
     def train_step_Q(self, state, next_state, action):# [B,step_ep,N]
         Qi = self.Qnet(state).gather(2, action.unsqueeze(-1).long()).squeeze(-1)
         with torch.no_grad():
-            Qi_T = self.Qnet_T(next_state)
+            Qi_T = self.Qnet_T(next_state).max(dim=-1)[0]
         return Qi, Qi_T
 
     def train_step_after(self, Q_mix, Q_T_mix, reward): # [B,step_ep,N]
@@ -233,7 +234,7 @@ class MA_QMIX():
         Q_all=torch.stack(Q_all, dim=2)
         QT_all=torch.stack(QT_all, dim=2)
         Q_mix=self.mix_net(Q_all, state_all.flatten(2))
-        QT_mix=self.mix_net(QT_all, next_state_all.flatten(2)).max(dim=-1)[0]
+        QT_mix=self.mix_net(QT_all, next_state_all.flatten(2))
 
         loss=[]
         for i, agent in enumerate(self.agent_list):
