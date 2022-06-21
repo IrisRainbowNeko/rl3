@@ -84,6 +84,7 @@ class MIXNet(nn.Module):
         self.hyper_b1 = nn.Linear(self.state_dim, self.mixing_hidden_size)
         self.hyper_b2 = nn.Sequential(
             nn.Linear(self.state_dim, self.mixing_hidden_size),
+            nn.LayerNorm(self.mixing_hidden_size),
             nn.SiLU(),
             nn.Linear(self.mixing_hidden_size, 1)
         )
@@ -143,7 +144,7 @@ class ReplayBuffer:
 
 
 class AgentQMIX():
-    def __init__(self, n_act, n_state, n_agent, args):
+    def __init__(self, n_act, n_state, n_agent, mix_net, args):
         """
         Initialize every things you need here.
         For example: building your model
@@ -162,7 +163,10 @@ class AgentQMIX():
         self.eps = args.eps_start
 
         self.criterion = nn.SmoothL1Loss()
-        self.optimizer = torch.optim.Adam(self.Qnet.parameters(), lr=args.lr, weight_decay=5e-4)
+        self.optimizer = torch.optim.Adam([
+                {'params': self.Qnet.parameters()},
+                {'params': mix_net.parameters()}
+            ], lr=args.lr, weight_decay=5e-4)
 
         self.args = args
 
@@ -219,7 +223,7 @@ class MA_QMIX():
 
         self.mix_net = MIXNet(self.n_agent, self.n_state*self.n_agent).to(device)
 
-        self.agent_list=[AgentQMIX(self.n_act, self.n_state, self.n_agent, args)]*self.n_agent
+        self.agent_list=[AgentQMIX(self.n_act, self.n_state, self.n_agent, self.mix_net, args)]*self.n_agent
 
         self.mem = ReplayBuffer(args.buffer_size)
 
