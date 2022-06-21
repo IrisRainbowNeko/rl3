@@ -35,13 +35,13 @@ class QNetwork(nn.Module):
         )
 
         self.head_V=nn.Sequential(
-            nn.Linear(512*n_agent, 512),
+            nn.Linear(512, 512),
             nn.LayerNorm(512),
             nn.SiLU(),
             nn.Linear(512, 1),
         )
         self.head_Adv=nn.Sequential(
-            nn.Linear(512*n_agent, 512),
+            nn.Linear(512, 512),
             nn.LayerNorm(512),
             nn.SiLU(),
             nn.Linear(512, action_size),
@@ -208,7 +208,7 @@ class MA_VDN():
 
         reward_all = (reward_all+7)/10
 
-        out_all=[]
+        '''out_all=[]
         out_T_all=[]
         for i, agent in enumerate(self.agent_list):
             out, out_T = agent.train_step_pre(state_all[:,:,i,:], next_state_all[:,:,i,:])
@@ -223,7 +223,16 @@ class MA_VDN():
         for i, agent in enumerate(self.agent_list):
             Qi, Qi_T = agent.train_step_Q(out_all_cat, out_T_all_cat, action_all[:,:,i])
             Q_all.append(Qi)
+            QT_all.append(Qi_T)'''
+
+        Q_all = []
+        QT_all = []
+        for i, agent in enumerate(self.agent_list):
+            out, out_T = agent.train_step_pre(state_all[:, :, i, :], next_state_all[:, :, i, :])
+            Qi, Qi_T = agent.train_step_Q(out, out_T, action_all[:, :, i])
+            Q_all.append(Qi)
             QT_all.append(Qi_T)
+
 
         Q_sum=sum(Q_all)
         QT_sum=sum(QT_all).max(dim=-1)[0]
