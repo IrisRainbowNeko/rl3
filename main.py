@@ -26,8 +26,8 @@ def parse():
     parser.add_argument("--save_dir", default='output', type=str)
 
     #parser = maddpg_arguments(parser)
-    parser = VDN_arguments(parser)
-    #parser = QMIX_arguments(parser)
+    #parser = VDN_arguments(parser)
+    parser = QMIX_arguments(parser)
     args = parser.parse_args()
     return args
 
