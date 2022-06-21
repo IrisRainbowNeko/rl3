@@ -60,6 +60,9 @@ class QNetwork(nn.Module):
         value = self.head_V(x_all)
         return value + advantage - advantage.mean()
 
+    def forward(self, x):
+        return self.step2(self.step1(x))
+
 class ReplayBuffer:
     def __init__(self, buffer_size):
         self.buffer_eps = []
@@ -178,16 +181,16 @@ class AgentVDN():
         self.optimizer.step()
 
     #@torch.no_grad()
-    def make_action(self, out_all, test=True):
+    def make_action(self, state, test=True):
         """
         Return predicted action of your agent
         Input:observation
         Return:action
         """
         if test:
-            return self.Qnet.step2(out_all).argmax(dim=-1)
+            return self.Qnet(state).argmax(dim=-1)
         else:
-            return self.Qnet.step2(out_all).argmax(dim=-1) if random.random() > self.eps else torch.randint(0, self.n_act, (1,))
+            return self.Qnet(state).argmax(dim=-1) if random.random() > self.eps else torch.randint(0, self.n_act, (1,))
 
 class MA_VDN():
     def __init__(self, env, args):
@@ -249,9 +252,7 @@ class MA_VDN():
 
     @torch.no_grad()
     def make_action_all(self, state_all):
-        out_all=[agent.Qnet.step1(state_all[:,i,:].unsqueeze(0)) for i,agent in enumerate(self.agent_list)]
-        out_all = torch.cat(out_all, dim=-1)
-        return [agent.make_action(out_all).view(-1)[-1] for i,agent in enumerate(self.agent_list)]
+        return [agent.make_action(state_all[:,i,:].unsqueeze(0)).view(-1)[-1] for i,agent in enumerate(self.agent_list)]
 
     def train(self):
         """

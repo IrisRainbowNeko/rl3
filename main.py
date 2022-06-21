@@ -19,7 +19,7 @@ def parse():
     parser.add_argument('--task', default='vdn', type=str, choices=['maddpg', 'vdn'], help='whether train policy gradient')
 
     parser.add_argument("--render", default=False, type=bool)
-    parser.add_argument("--snap", default=1, type=float)
+    parser.add_argument("--snap", default=10, type=float)
     parser.add_argument("--name", default='CartPole', type=str)
     parser.add_argument("--snap_save", default=10000, type=float)
     parser.add_argument("--save_dir", default='output', type=str)
