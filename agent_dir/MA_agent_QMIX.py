@@ -25,28 +25,24 @@ class QNet(nn.Module):
     def __init__(self, state_size, action_size):
         super(QNet, self).__init__()
         self.base = nn.Sequential(
-            nn.Linear(state_size, 512),
-            nn.LayerNorm(512),
-            nn.SiLU(),
-
-            nn.Linear(512, 512),
-            nn.LayerNorm(512),
+            nn.Linear(state_size, 256),
+            nn.LayerNorm(256),
             nn.SiLU(),
         )
 
-        self.lstm = nn.LSTM(input_size=512, hidden_size=512, num_layers=2, batch_first=True)
+        self.lstm = nn.LSTM(input_size=256, hidden_size=256, num_layers=1, batch_first=True)
 
         self.head_V = nn.Sequential(
-            nn.Linear(512, 512),
-            nn.LayerNorm(512),
+            nn.Linear(256, 256),
+            nn.LayerNorm(256),
             nn.SiLU(),
-            nn.Linear(512, 1),
+            nn.Linear(256, 1),
         )
         self.head_Adv = nn.Sequential(
-            nn.Linear(512, 512),
-            nn.LayerNorm(512),
+            nn.Linear(256, 256),
+            nn.LayerNorm(256),
             nn.SiLU(),
-            nn.Linear(512, action_size),
+            nn.Linear(256, action_size),
         )
 
     def forward(self, x):
@@ -65,20 +61,20 @@ class MIXNet(nn.Module):
 
         self.n_agent = n_agent
         self.state_dim = state_dim
-        self.mixing_hidden_size = 512
+        self.mixing_hidden_size = 256
 
         # Used to generate mixing network
         self.hyper_w1 = nn.Sequential(
-            nn.Linear(self.state_dim, 1024),
-            nn.LayerNorm(1024),
+            nn.Linear(self.state_dim, 512),
+            nn.LayerNorm(512),
             nn.SiLU(),
-            nn.Linear(1024, self.n_agent * self.mixing_hidden_size)
+            nn.Linear(512, self.n_agent * self.mixing_hidden_size)
         )
         self.hyper_w2 = nn.Sequential(
-            nn.Linear(self.state_dim, 1024),
-            nn.LayerNorm(1024),
+            nn.Linear(self.state_dim, 512),
+            nn.LayerNorm(512),
             nn.SiLU(),
-            nn.Linear(1024, self.mixing_hidden_size)
+            nn.Linear(512, self.mixing_hidden_size)
         )
 
         self.hyper_b1 = nn.Sequential(
