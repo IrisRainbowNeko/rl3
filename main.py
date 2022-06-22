@@ -8,7 +8,6 @@ import cv2
 import numpy as np
 
 from multiagent.environment import MultiAgentEnv
-from multiagent.policy import InteractivePolicy
 import multiagent.scenarios as scenarios
 
 from agent_dir.MA_agent_ddpg import MA_DDPG
