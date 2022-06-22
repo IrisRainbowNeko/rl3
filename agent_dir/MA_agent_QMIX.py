@@ -69,10 +69,10 @@ class MIXNet(nn.Module):
 
         # Used to generate mixing network
         self.hyper_w1 = nn.Sequential(
-            nn.Linear(self.state_dim, 1024),
-            nn.LayerNorm(1024),
+            nn.Linear(self.state_dim, 2048),
+            nn.LayerNorm(2048),
             nn.SiLU(),
-            nn.Linear(1024, self.n_agent * self.mixing_hidden_size)
+            nn.Linear(2048, self.n_agent * self.mixing_hidden_size)
         )
         self.hyper_w2 = nn.Sequential(
             nn.Linear(self.state_dim, 512),
@@ -91,9 +91,9 @@ class MIXNet(nn.Module):
 
         self.hyper_b1 = nn.Sequential(
             nn.Linear(self.state_dim, self.mixing_hidden_size),
-            #nn.LayerNorm(self.mixing_hidden_size),
-            #nn.SiLU(),
-            #nn.Linear(self.mixing_hidden_size, self.mixing_hidden_size)
+            nn.LayerNorm(self.mixing_hidden_size),
+            nn.SiLU(),
+            nn.Linear(self.mixing_hidden_size, self.mixing_hidden_size)
         )
         self.hyper_b2 = nn.Sequential(
             nn.Linear(self.state_dim, self.mixing_hidden_size),
