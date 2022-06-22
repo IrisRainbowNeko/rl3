@@ -186,8 +186,10 @@ class AgentQMIX():
 
     def train_step_Q(self, state, next_state, action):# [B,step_ep,N]
         Qi = self.Qnet(state).gather(2, action.unsqueeze(-1).long()).squeeze(-1)
-        with torch.no_grad():
-            Qi_T = self.Qnet_T(next_state).max(dim=-1)[0]
+
+        Q_max_a = self.Qnet(next_state).max(dim=-1)[1].long().unsqueeze(-1)
+        Qi_T = self.Qnet_T(next_state).max(dim=-1).gather(1, Q_max_a)
+
         return Qi, Qi_T
 
     def train_step_after(self, Q_mix, Q_T_mix, reward): # [B,step_ep,N]
