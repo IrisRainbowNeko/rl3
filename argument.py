@@ -106,4 +106,6 @@ def QMIX_arguments(parser):
     parser.add_argument("--n_frames", default=int(30000), type=int)
     parser.add_argument("--ema", default=0.99, type=float)
 
+    parser.add_argument("--sig", default=False, type=bool)
+
     return parser

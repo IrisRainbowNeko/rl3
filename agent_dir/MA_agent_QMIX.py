@@ -60,7 +60,7 @@ class QNet(nn.Module):
         return value + advantage - advantage.mean()
 
 class MIXNet(nn.Module):
-    def __init__(self, n_agent, state_dim):
+    def __init__(self, n_agent, state_dim, sig=False):
         super(MIXNet, self).__init__()
 
         self.n_agent = n_agent
@@ -81,11 +81,13 @@ class MIXNet(nn.Module):
             nn.Linear(1024, self.mixing_hidden_size)
         )
 
-        self.p_w1 = nn.Parameter(torch.Tensor(1,1,self.n_agent, self.mixing_hidden_size))
-        self.p_w2 = nn.Parameter(torch.Tensor(1,1,self.mixing_hidden_size, 1))
+        self.sig=sig
+        if sig:
+            self.p_w1 = nn.Parameter(torch.Tensor(1,1,self.n_agent, self.mixing_hidden_size))
+            self.p_w2 = nn.Parameter(torch.Tensor(1,1,self.mixing_hidden_size, 1))
 
-        nn.init.kaiming_uniform_(self.p_w1, a=math.sqrt(5))
-        nn.init.kaiming_uniform_(self.p_w2, a=math.sqrt(5))
+            nn.init.kaiming_uniform_(self.p_w1, a=math.sqrt(5))
+            nn.init.kaiming_uniform_(self.p_w2, a=math.sqrt(5))
 
         self.hyper_b1 = nn.Sequential(
             nn.Linear(self.state_dim, self.mixing_hidden_size),
@@ -111,7 +113,8 @@ class MIXNet(nn.Module):
         w1 = w1.view(B, ep_len, self.n_agent, self.mixing_hidden_size)  # (batch_size, max_episode_len, N,  qmix_hidden_dim)
         b1 = b1.view(B, ep_len, 1, self.mixing_hidden_size)  # (batch_size, max_episode_len, 1, qmix_hidden_dim)
 
-        w1 = self.p_w1 * F.sigmoid(w1)
+        if self.sig:
+            w1 = self.p_w1 * F.sigmoid(w1)
         q_hidden = F.elu(self.ln1(q_all @ w1 + b1))  # (batch_size, max_episode_len, 1, qmix_hidden_dim)
 
         w2 = torch.abs(self.hyper_w2(s_global))  # (batch_size, max_episode_len, qmix_hidden_dim)
@@ -119,7 +122,8 @@ class MIXNet(nn.Module):
         w2 = w2.view(B, ep_len, self.mixing_hidden_size, 1)  # (batch_size, max_episode_len, qmix_hidden_dim, 1)
         b2 = b2.view(B, ep_len, 1, 1)  # (batch_size, max_episode_len, 1， 1)
 
-        w2 = self.p_w2 * F.sigmoid(w2)
+        if self.sig:
+            w2 = self.p_w2 * F.sigmoid(w2)
         q_total = q_hidden @ w2 + b2  # (batch_size, max_episode_len, 1， 1)
         q_total = q_total.view(B, -1)  # (batch_size, max_episode_len)
         return q_total
@@ -202,8 +206,7 @@ class AgentQMIX():
 
     def train_step_after(self, Q_mix, Q_T_mix, reward): # [B,step_ep,N]
         y = deepcopy(reward.float())
-        with torch.no_grad():
-            y += self.args.gamma * Q_T_mix
+        y += self.args.gamma * Q_T_mix
 
         loss = self.criterion(Q_mix, y)
         return loss
@@ -236,7 +239,7 @@ class MA_QMIX():
         self.n_act = env.action_space[0].n
         self.n_state = env.observation_space[0].shape[0]
 
-        self.mix_net = MIXNet(self.n_agent, self.n_state*self.n_agent).to(device)
+        self.mix_net = MIXNet(self.n_agent, self.n_state*self.n_agent, sig=args.sig).to(device)
 
         self.agent_list=[AgentQMIX(self.n_act, self.n_state, self.n_agent, self.mix_net, args)]*self.n_agent
 
