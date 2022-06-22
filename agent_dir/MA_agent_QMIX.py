@@ -258,8 +258,9 @@ class MA_QMIX():
             QT_all = torch.stack(QT_all, dim=2)
             QT_mix=self.mix_net(QT_all, next_state_all.flatten(2))
 
-        y = deepcopy(reward_all[:,:,0].float())
-        y += self.args.gamma * QT_mix
+            y = deepcopy(reward_all[:,:,0].float())
+            y += self.args.gamma * QT_mix
+
         loss = self.criterion(Q_mix, y)
 
         self.agent_list[0].train_step_backward(loss)
