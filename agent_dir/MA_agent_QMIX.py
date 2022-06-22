@@ -188,7 +188,7 @@ class AgentQMIX():
         Qi = self.Qnet(state).gather(2, action.unsqueeze(-1).long()).squeeze(-1)
 
         Q_max_a = self.Qnet(next_state).max(dim=-1)[1].long().unsqueeze(-1)
-        Qi_T = self.Qnet_T(next_state).gather(1, Q_max_a)
+        Qi_T = self.Qnet_T(next_state).gather(1, Q_max_a).squeeze(-1)
 
         return Qi, Qi_T
 
