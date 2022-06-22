@@ -198,17 +198,11 @@ class AgentQMIX():
     def train_step_Q(self, state, next_state, action):# [B,step_ep,N]
         Qi = self.Qnet(state).gather(2, action.unsqueeze(-1).long()).squeeze(-1)
 
-        Q_max_a = self.Qnet(next_state).max(dim=-1)[1].long().unsqueeze(-1)
-        Qi_T = self.Qnet_T(next_state).gather(2, Q_max_a).squeeze(-1)
+        with torch.no_grad():
+            Q_max_a = self.Qnet(next_state).max(dim=-1)[1].long().unsqueeze(-1)
+            Qi_T = self.Qnet_T(next_state).gather(2, Q_max_a).squeeze(-1)
 
         return Qi, Qi_T
-
-    def train_step_after(self, Q_mix, Q_T_mix, reward): # [B,step_ep,N]
-        y = deepcopy(reward.float())
-        y += self.args.gamma * Q_T_mix
-
-        loss = self.criterion(Q_mix, y)
-        return loss
 
     def train_step_backward(self, loss):
         self.optimizer.zero_grad()
@@ -258,10 +252,11 @@ class MA_QMIX():
             QT_all.append(Qi_T)
 
         Q_all=torch.stack(Q_all, dim=2)
-        QT_all=torch.stack(QT_all, dim=2)
         Q_mix=self.mix_net(Q_all, state_all.flatten(2))
-        QT_mix=self.mix_net(QT_all, next_state_all.flatten(2))
 
+        with torch.no_grad():
+            QT_all = torch.stack(QT_all, dim=2)
+            QT_mix=self.mix_net(QT_all, next_state_all.flatten(2))
 
         y = deepcopy(reward_all[:,:,0].float())
         y += self.args.gamma * QT_mix
