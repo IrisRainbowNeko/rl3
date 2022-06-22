@@ -90,7 +90,7 @@ def QMIX_arguments(parser):
     parser.add_argument("--seed", default=11037, type=int)
     parser.add_argument("--buffer_size", default=int(1e6), type=int)
     parser.add_argument("--lr", default=0.001, type=float)
-    parser.add_argument("--batch_size", default=8, type=int)
+    parser.add_argument("--batch_size", default=256, type=int)
     parser.add_argument("--gamma", default=0.95, type=float)
     parser.add_argument("--grad_norm_clip", default=1, type=float)
 
