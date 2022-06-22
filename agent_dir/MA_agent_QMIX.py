@@ -179,7 +179,6 @@ class AgentQMIX():
 
         self.eps = args.eps_start
 
-        self.criterion = nn.SmoothL1Loss()
         self.optimizer = torch.optim.Adam([
                 {'params': self.Qnet.parameters()},
                 {'params': mix_net.parameters()}
@@ -200,7 +199,7 @@ class AgentQMIX():
         Qi = self.Qnet(state).gather(2, action.unsqueeze(-1).long()).squeeze(-1)
 
         Q_max_a = self.Qnet(next_state).max(dim=-1)[1].long().unsqueeze(-1)
-        Qi_T = self.Qnet_T(next_state).gather(1, Q_max_a).squeeze(-1)
+        Qi_T = self.Qnet_T(next_state).gather(2, Q_max_a).squeeze(-1)
 
         return Qi, Qi_T
 
@@ -240,6 +239,7 @@ class MA_QMIX():
         self.n_state = env.observation_space[0].shape[0]
 
         self.mix_net = MIXNet(self.n_agent, self.n_state*self.n_agent, sig=args.sig).to(device)
+        self.criterion = nn.SmoothL1Loss()
 
         self.agent_list=[AgentQMIX(self.n_act, self.n_state, self.n_agent, self.mix_net, args)]*self.n_agent
 
@@ -262,12 +262,11 @@ class MA_QMIX():
         Q_mix=self.mix_net(Q_all, state_all.flatten(2))
         QT_mix=self.mix_net(QT_all, next_state_all.flatten(2))
 
-        loss=[]
-        for i, agent in enumerate(self.agent_list):
-            loss_i = agent.train_step_after(Q_mix, QT_mix, reward_all[:,:,i])
-            loss.append(loss_i)
 
-        loss=sum(loss)/self.n_agent
+        y = deepcopy(reward_all[:,:,0].float())
+        y += self.args.gamma * QT_mix
+        loss = self.criterion(Q_mix, y)
+
         self.agent_list[0].train_step_backward(loss)
 
         return loss.item()
