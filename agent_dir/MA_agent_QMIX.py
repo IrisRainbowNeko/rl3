@@ -93,9 +93,9 @@ class MIXNet(nn.Module):
 
         self.hyper_b1 = nn.Sequential(
             nn.Linear(self.state_dim, self.mixing_hidden_size),
-            nn.LayerNorm(self.mixing_hidden_size),
-            nn.SiLU(),
-            nn.Linear(self.mixing_hidden_size, self.mixing_hidden_size),
+            #nn.LayerNorm(self.mixing_hidden_size),
+            #nn.SiLU(),
+            #nn.Linear(self.mixing_hidden_size, self.mixing_hidden_size),
         )
         self.hyper_b2 = nn.Sequential(
             nn.Linear(self.state_dim, self.mixing_hidden_size),
