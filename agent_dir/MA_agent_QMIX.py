@@ -319,7 +319,7 @@ class MA_QMIX():
                 if step_inter>=self.args.max_step or done_all.all():
                     self.writer.add_scalar("ep_r", ep_r/step_inter, global_step=episode)
                     if episode%10==0:
-                        logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r/step_inter}, len_mem:{len(self.mem)}, eps:{self.agent_list[0].eps}')
+                        logger.info(f'[{episode}/{n_ep}] <{step}> ep_r:{ep_r/step_inter:.4f}, len_mem:{len(self.mem)}, eps:{self.agent_list[0].eps:.4f}')
                         #logger.info(f'ep_r_all:{ep_r_all/step_inter}')
                     break
 
@@ -333,7 +333,7 @@ class MA_QMIX():
 
                 self.writer.add_scalar("loss", loss, global_step=step)
                 if episode % self.args.snap == 0:
-                    logger.info(f'[{episode}/{n_ep}] <{step}> loss:{loss_sum / self.args.snap}, eps:{self.agent_list[0].eps}')
+                    logger.info(f'[{episode}/{n_ep}] <{step}> loss:{loss_sum / self.args.snap:.4f}, eps:{self.agent_list[0].eps:.4f}')
                     loss_sum = 0
 
     @logger.catch
