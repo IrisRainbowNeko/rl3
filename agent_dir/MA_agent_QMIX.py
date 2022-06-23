@@ -69,10 +69,10 @@ class MIXNet(nn.Module):
 
         # Used to generate mixing network
         self.hyper_w1 = nn.Sequential(
-            nn.Linear(self.state_dim, 2048),
-            nn.LayerNorm(2048),
+            nn.Linear(self.state_dim, 1024),
+            nn.LayerNorm(1024),
             nn.SiLU(),
-            nn.Linear(2048, self.n_agent * self.mixing_hidden_size)
+            nn.Linear(1024, self.n_agent * self.mixing_hidden_size)
         )
         self.hyper_w2 = nn.Sequential(
             nn.Linear(self.state_dim, 512),
@@ -115,7 +115,8 @@ class MIXNet(nn.Module):
 
         if self.sig:
             w1 = self.p_w1 * F.sigmoid(w1)
-        q_hidden = F.elu(self.ln1(q_all @ w1 + b1))  # (batch_size, max_episode_len, 1, qmix_hidden_dim)
+        #q_hidden = F.elu(self.ln1(q_all @ w1 + b1))  # (batch_size, max_episode_len, 1, qmix_hidden_dim)
+        q_hidden = F.elu(q_all @ w1 + b1)  # (batch_size, max_episode_len, 1, qmix_hidden_dim)
 
         w2 = torch.abs(self.hyper_w2(s_global))  # (batch_size, max_episode_len, qmix_hidden_dim)
         b2 = self.hyper_b2(s_global)  # (batch_size, max_episode_len,1)
@@ -299,7 +300,7 @@ class MA_QMIX():
                 action_list = self.make_action_all(torch.stack(state_list, dim=0))
                 action_all = torch.tensor(action_list)
 
-                for agent in self.agent_list:
+                for agent in self.agent_list[0:1]:
                     agent.eps_update()
 
                 next_state_list, reward_list, done_list, info = self.env.step([to_onehot(x.view(-1), n=self.n_act).numpy() for x in action_list])
