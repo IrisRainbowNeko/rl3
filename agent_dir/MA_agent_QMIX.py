@@ -70,17 +70,15 @@ class MIXNet(nn.Module):
         # Used to generate mixing network
         self.hyper_w1 = nn.Sequential(
             nn.Linear(self.state_dim, 1024),
-            nn.LayerNorm(1024),
+            #nn.LayerNorm(1024),
             nn.SiLU(),
             nn.Linear(1024, self.n_agent * self.mixing_hidden_size),
-            nn.LayerNorm(self.n_agent * self.mixing_hidden_size),
         )
         self.hyper_w2 = nn.Sequential(
             nn.Linear(self.state_dim, 512),
-            nn.LayerNorm(512),
+            #nn.LayerNorm(512),
             nn.SiLU(),
             nn.Linear(512, self.mixing_hidden_size),
-            nn.LayerNorm(self.mixing_hidden_size),
         )
 
         self.sig=sig
@@ -99,7 +97,7 @@ class MIXNet(nn.Module):
         )
         self.hyper_b2 = nn.Sequential(
             nn.Linear(self.state_dim, self.mixing_hidden_size),
-            nn.LayerNorm(self.mixing_hidden_size),
+            #nn.LayerNorm(self.mixing_hidden_size),
             nn.SiLU(),
             nn.Linear(self.mixing_hidden_size, 1),
         )
@@ -117,8 +115,8 @@ class MIXNet(nn.Module):
 
         if self.sig:
             w1 = self.p_w1 * F.sigmoid(w1)
-        #q_hidden = F.elu(self.ln1(q_all @ w1 + b1))  # (batch_size, max_episode_len, 1, qmix_hidden_dim)
-        q_hidden = F.elu(q_all @ w1 + b1)  # (batch_size, max_episode_len, 1, qmix_hidden_dim)
+        q_hidden = F.elu(self.ln1(q_all @ w1 + b1))  # (batch_size, max_episode_len, 1, qmix_hidden_dim)
+        #q_hidden = F.elu(q_all @ w1 + b1)  # (batch_size, max_episode_len, 1, qmix_hidden_dim)
 
         w2 = torch.abs(self.hyper_w2(s_global))  # (batch_size, max_episode_len, qmix_hidden_dim)
         b2 = self.hyper_b2(s_global)  # (batch_size, max_episode_len,1)
