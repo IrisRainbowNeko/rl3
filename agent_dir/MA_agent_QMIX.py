@@ -72,15 +72,15 @@ class MIXNet(nn.Module):
             nn.Linear(self.state_dim, 1024),
             nn.LayerNorm(1024),
             nn.SiLU(),
-            nn.utils.weight_norm(nn.Linear(1024, self.n_agent * self.mixing_hidden_size)),
-            #nn.LayerNorm(self.n_agent * self.mixing_hidden_size),
+            nn.Linear(1024, self.n_agent * self.mixing_hidden_size),
+            nn.LayerNorm(self.n_agent * self.mixing_hidden_size),
         )
         self.hyper_w2 = nn.Sequential(
             nn.Linear(self.state_dim, 512),
             nn.LayerNorm(512),
             nn.SiLU(),
-            nn.utils.weight_norm(nn.Linear(512, self.mixing_hidden_size)),
-            #nn.LayerNorm(self.mixing_hidden_size),
+            nn.Linear(512, self.mixing_hidden_size),
+            nn.LayerNorm(self.mixing_hidden_size),
         )
 
         self.sig=sig
