@@ -185,10 +185,10 @@ class AgentQMIX():
 
         self.eps = args.eps_start
 
-        self.optimizer = torch.optim.Adam([
+        self.optimizer = torch.optim.AdamW([
                 {'params': self.Qnet.parameters()},
                 {'params': mix_net.parameters()}
-            ], lr=args.lr, weight_decay=5e-4)
+            ], lr=args.lr, weight_decay=1e-4)
 
         self.args = args
 
