@@ -65,14 +65,14 @@ class MIXNet(nn.Module):
 
         self.n_agent = n_agent
         self.state_dim = state_dim
-        self.mixing_hidden_size = 512
+        self.mixing_hidden_size = 128
 
         # Used to generate mixing network
         self.hyper_w1 = nn.Sequential(
-            nn.Linear(self.state_dim, 1024),
-            nn.LayerNorm(1024),
+            nn.Linear(self.state_dim, 512),
+            nn.LayerNorm(512),
             nn.SiLU(),
-            nn.Linear(1024, self.n_agent * self.mixing_hidden_size),
+            nn.Linear(512, self.n_agent * self.mixing_hidden_size),
         )
         self.hyper_w2 = nn.Sequential(
             nn.Linear(self.state_dim, 512),
@@ -91,9 +91,9 @@ class MIXNet(nn.Module):
 
         self.hyper_b1 = nn.Sequential(
             nn.Linear(self.state_dim, self.mixing_hidden_size),
-            #nn.LayerNorm(self.mixing_hidden_size),
-            #nn.SiLU(),
-            #nn.Linear(self.mixing_hidden_size, self.mixing_hidden_size),
+            nn.LayerNorm(self.mixing_hidden_size),
+            nn.SiLU(),
+            nn.Linear(self.mixing_hidden_size, self.mixing_hidden_size),
         )
         self.hyper_b2 = nn.Sequential(
             nn.Linear(self.state_dim, self.mixing_hidden_size),
@@ -185,10 +185,11 @@ class AgentQMIX():
 
         self.eps = args.eps_start
 
-        self.optimizer = torch.optim.AdamW([
+        self.optimizer = torch.optim.Adam([
                 {'params': self.Qnet.parameters()},
                 {'params': mix_net.parameters()}
             ], lr=args.lr, weight_decay=1e-4)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20000, 30000, 40000], gamma=0.5)
 
         self.args = args
 
@@ -215,6 +216,7 @@ class AgentQMIX():
         loss.backward(retain_graph=True)
         torch.nn.utils.clip_grad_norm_(parameters=self.Qnet.parameters(), max_norm=self.args.grad_norm_clip)
         self.optimizer.step()
+        self.scheduler.step()
 
     #@torch.no_grad()
     def make_action(self, state, test=False):
