@@ -129,6 +129,11 @@ class MIXNet(nn.Module):
         q_total = q_total.view(B, -1)  # (batch_size, max_episode_len)
         return q_total
 
+def weight_init(m):
+    if isinstance(m, nn.Linear):
+        nn.init.xavier_normal_(m.weight, gain=0.1)
+        nn.init.constant_(m.bias, 0)
+
 class ReplayBuffer:
     def __init__(self, buffer_size):
         self.buffer_eps = []
@@ -234,6 +239,7 @@ class MA_QMIX():
         self.n_state = env.observation_space[0].shape[0]
 
         self.mix_net = MIXNet(self.n_agent, self.n_state*self.n_agent, sig=args.sig).to(device)
+        self.mix_net.apply(weight_init)
         self.criterion = nn.SmoothL1Loss()
 
         self.agent_list=[AgentQMIX(self.n_act, self.n_state, self.n_agent, self.mix_net, args)]*self.n_agent
