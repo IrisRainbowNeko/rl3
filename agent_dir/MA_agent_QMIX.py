@@ -72,19 +72,21 @@ class MIXNet(nn.Module):
             nn.Linear(self.state_dim, 1024),
             nn.LayerNorm(1024),
             nn.SiLU(),
-            nn.Linear(1024, self.n_agent * self.mixing_hidden_size)
+            nn.utils.weight_norm(nn.Linear(1024, self.n_agent * self.mixing_hidden_size)),
+            #nn.LayerNorm(self.n_agent * self.mixing_hidden_size),
         )
         self.hyper_w2 = nn.Sequential(
             nn.Linear(self.state_dim, 512),
             nn.LayerNorm(512),
             nn.SiLU(),
-            nn.Linear(512, self.mixing_hidden_size)
+            nn.utils.weight_norm(nn.Linear(512, self.mixing_hidden_size)),
+            #nn.LayerNorm(self.mixing_hidden_size),
         )
 
         self.sig=sig
         if sig:
-            self.p_w1 = nn.Parameter(torch.Tensor(1,1,self.n_agent, self.mixing_hidden_size))
-            self.p_w2 = nn.Parameter(torch.Tensor(1,1,self.mixing_hidden_size, 1))
+            self.p_w1 = nn.Parameter(torch.Tensor(1,1,self.n_agent, self.mixing_hidden_size), requires_grad=True)
+            self.p_w2 = nn.Parameter(torch.Tensor(1,1,self.mixing_hidden_size, 1), requires_grad=True)
 
             nn.init.kaiming_uniform_(self.p_w1, a=math.sqrt(5))
             nn.init.kaiming_uniform_(self.p_w2, a=math.sqrt(5))
