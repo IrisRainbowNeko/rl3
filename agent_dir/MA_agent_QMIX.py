@@ -189,7 +189,7 @@ class AgentQMIX():
                 {'params': self.Qnet.parameters()},
                 {'params': mix_net.parameters()}
             ], lr=args.lr, weight_decay=1e-4)
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[20000, 30000, 40000], gamma=0.5)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[30000, 38000, 44000], gamma=0.5)
 
         self.args = args
 
