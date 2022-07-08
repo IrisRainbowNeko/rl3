@@ -206,9 +206,9 @@ class AgentQMIX():
         Qi = self.Qnet(state).gather(2, action.unsqueeze(-1).long()).squeeze(-1)
 
         with torch.no_grad():
-            Q_max_a = self.Qnet(next_state).max(dim=-1)[1].long().unsqueeze(-1)
-            Qi_T = self.Qnet_T(next_state).gather(2, Q_max_a).squeeze(-1)
-            #Qi_T = self.Qnet_T(next_state).max(dim=-1)[0]
+            #Q_max_a = self.Qnet(next_state).max(dim=-1)[1].long().unsqueeze(-1)
+            #Qi_T = self.Qnet_T(next_state).gather(2, Q_max_a).squeeze(-1)
+            Qi_T = self.Qnet_T(next_state).max(dim=-1)[0]
 
         return Qi, Qi_T
 

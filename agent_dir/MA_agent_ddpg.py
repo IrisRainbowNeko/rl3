@@ -21,15 +21,15 @@ class ActorNetwork(nn.Module):
         self.output_size = action_size
 
         self.net = nn.Sequential(
-            nn.Linear(state_size, 256),
-            nn.LayerNorm(256),
+            nn.Linear(state_size, 512),
+            nn.LayerNorm(512),
             nn.SiLU(),
 
-            nn.Linear(256, 256),
-            nn.LayerNorm(256),
+            nn.Linear(512, 512),
+            nn.LayerNorm(512),
             nn.SiLU(),
 
-            nn.Linear(256, action_size),
+            nn.Linear(512, action_size),
             nn.Softmax()
         )
 
@@ -39,38 +39,31 @@ class ActorNetwork(nn.Module):
 class CriticNetwork(nn.Module):
     def __init__(self, state_size, action_size):
         super(CriticNetwork, self).__init__()
-        # self.net = resnet.resnet18(pretrained=True)
-        # self.net.conv1 = nn.Conv2d(4, self.net.conv1.out_channels, kernel_size=7, stride=2, padding=3, bias=False)
-        # self.net.fc = nn.Linear(self.net.fc.in_features, output_size)
-
-        # self.net = alexnet(pretrained=True)
-        # self.net.features[0]=nn.Conv2d(4, 64, kernel_size=11, stride=4, padding=2)
-        # self.net.classifier[-1]=nn.Linear(4096, output_size)
 
         self.base_state = nn.Sequential(
-            nn.Linear(state_size, 256),
-            nn.LayerNorm(256),
+            nn.Linear(state_size, 512),
+            nn.LayerNorm(512),
             nn.SiLU(),
         )
 
         self.base_act = nn.Sequential(
-            nn.Linear(action_size, 256),
-            nn.LayerNorm(256),
+            nn.Linear(action_size, 512),
+            nn.LayerNorm(512),
             nn.SiLU(),
         )
 
         # self.attention = DotProductAttention(512)
 
         self.net = nn.Sequential(
-            nn.Linear(512, 256),
-            nn.LayerNorm(256),
+            nn.Linear(1024, 512),
+            nn.LayerNorm(512),
             nn.SiLU(),
 
-            nn.Linear(256, 256),
-            nn.LayerNorm(256),
+            nn.Linear(512, 512),
+            nn.LayerNorm(512),
             nn.SiLU(),
 
-            nn.Linear(256, 1)
+            nn.Linear(512, 1)
         )
 
     def forward(self, s, a):
