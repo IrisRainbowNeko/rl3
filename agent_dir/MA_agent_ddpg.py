@@ -271,7 +271,8 @@ class MA_DDPG():
                     self.writer.add_scalar("loss", C_loss, global_step=step)
                     self.writer.add_scalar("A_loss", A_loss, global_step=step)
                     if step % self.args.snap == 0:
-                        logger.info(f'[{episode}/{n_ep}] <{step}> loss_C:{loss_sum_C / self.args.snap}, loss_A:{loss_sum_A / self.args.snap}, eps:{self.agent_list[0].eps}')
+                        logger.info(f'[{episode}/{n_ep}] <{step}> loss_C:{loss_sum_C / self.args.snap:.4f}, '
+                                    f'loss_A:{loss_sum_A / self.args.snap:.4f}, eps:{self.agent_list[0].eps:.4f}')
                         loss_sum_C = 0
                         loss_sum_A = 0
                 step += 1
