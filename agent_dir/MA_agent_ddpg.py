@@ -262,7 +262,7 @@ class MA_DDPG():
 
                 self.mem.push(*[torch.tensor(x, device='cpu') for x in [state_all.cpu(), action_all, reward_all, next_state_all, done_all]])
 
-                if len(self.mem) >= self.args.batch_size * 5:
+                if len(self.mem) >= self.args.batch_size * 5 and step % self.args.learn_step==0:
                     trans = self.mem.sample(self.args.batch_size)
                     C_loss, A_loss = self.train_step(*trans)
 
