@@ -29,6 +29,10 @@ class ActorNetwork(nn.Module):
             nn.LayerNorm(512),
             nn.SiLU(),
 
+            nn.Linear(512, 512),
+            nn.LayerNorm(512),
+            nn.SiLU(),
+
             nn.Linear(512, action_size),
             nn.Softmax()
         )
@@ -56,6 +60,10 @@ class CriticNetwork(nn.Module):
 
         self.net = nn.Sequential(
             nn.Linear(1024, 512),
+            nn.LayerNorm(512),
+            nn.SiLU(),
+
+            nn.Linear(512, 512),
             nn.LayerNorm(512),
             nn.SiLU(),
 
