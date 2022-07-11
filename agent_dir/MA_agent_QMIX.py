@@ -241,7 +241,9 @@ class MA_QMIX():
         self.n_act = env.action_space[0].n
         self.n_state = env.observation_space[0].shape[0]
 
-        self.mix_net = MIXNet(self.n_agent, self.n_state*self.n_agent, sig=args.sig).to(device)
+        #g_state_dim=self.n_state*self.n_agent
+        g_state_dim=4*self.n_agent #速度+绝对坐标
+        self.mix_net = MIXNet(self.n_agent, g_state_dim, sig=args.sig).to(device)
         self.mix_net.apply(weight_init)
         self.criterion = nn.SmoothL1Loss()
 
@@ -262,7 +264,7 @@ class MA_QMIX():
             QT_all.append(Qi_T)
 
         Q_all=torch.stack(Q_all, dim=2)
-        Q_mix=self.mix_net(Q_all, state_all.flatten(2))
+        Q_mix=self.mix_net(Q_all, state_all[:,:,:,:4].flatten(2))
 
         with torch.no_grad():
             QT_all = torch.stack(QT_all, dim=2)
