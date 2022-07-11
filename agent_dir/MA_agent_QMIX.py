@@ -268,7 +268,7 @@ class MA_QMIX():
 
         with torch.no_grad():
             QT_all = torch.stack(QT_all, dim=2)
-            QT_mix=self.mix_net(QT_all, next_state_all.flatten(2))
+            QT_mix=self.mix_net(QT_all, next_state_all[:,:,:,:4].flatten(2))
 
             y = deepcopy(reward_all[:,:,0].float())
             y += self.args.gamma * QT_mix
